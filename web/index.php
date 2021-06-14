@@ -6,7 +6,7 @@
   </head>
 
   <body>
-    <p>LEDs now showing
+    <p>LEDs now showing: 
       <?php
         if(isset($_GET['mode'])) {
           echo " {$_GET['mode']}";
