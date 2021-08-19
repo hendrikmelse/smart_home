@@ -8,7 +8,8 @@ import time
 import logging
 from colorsys import hls_to_rgb
 
-HOST = '192.168.1.133'
+with open('./host.txt') as f:
+    HOST = f.read()
 PORT = 42069
 
 def stream_tv_game(client):

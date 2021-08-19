@@ -10,7 +10,8 @@ import threading
 import logging
 
 
-HOST = '192.168.1.133'
+with open('./host.txt') as f:
+    HOST = f.read()
 PORT = 42069
 
 help_message = '''
