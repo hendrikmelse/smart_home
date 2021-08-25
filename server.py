@@ -71,6 +71,7 @@ class Server():
                 th.start()
 
     @tenacity.retry(
+        reraise=True,
         stop=tenacity.stop_after_attempt(max_sock_bind_attempts),
         wait=tenacity.wait_fixed(5),
     )
@@ -89,25 +90,29 @@ class Server():
         """Listen for incoming messages and execute them."""
         while True:
             # Get data
-            data = conn.recv(1024)
+            data = b''
+            while data == b'':
+                data = conn.recv(1024)
+
             if data is None:
                 self._log(f'Closing connection to {addr[0]}:{addr[1]}')
                 conn.close()
             
             # Turn data from bytes into string
             data = data.decode()
+            self._log(f'Received message: {data}')
 
             # Parse data
             try:
                 message = json.loads(data)
             except Exception as ex:
-                self._log(f'Failed to load data with exception: {ex}')
+                self._log(f'Failed to interpret with exception: {ex}')
                 self._send_response(conn, False, (
                     'Failed to parse data, make sure the message is a json '
                     'literal and is fewer than 1024 characters long.'
                 ))
                 continue
-            print(message)
+
             # Excecute command
             try:
                 if message['target'].lower() == 'server':
@@ -125,17 +130,19 @@ class Server():
 
     def _send_response(self, conn, success, message, response=None):
         """Send a response back to the client."""
-        if response == None:
-            conn.sendall(('{'
-                f'"success": {str(success).lower()}, '
-                f'"message": "{message}"'
-            '}').encode())
-        else:
-            conn.sendall(('{'
-                f'"success": {str(success).lower()}, '
-                f'"message": "{message}", '
-                f'"response": "{response}"'
-            '}').encode())
+        
+        r = {
+            'success': success,
+            'message': message,
+        }
+
+        if response is not None:
+            r['response'] = response
+        
+        r = json.dumps(r)
+        
+        self._log(f'Sending response: {r}')
+        conn.sendall(r.encode())
 
     def _execute(self, source, target, payload):
         """
@@ -168,20 +175,20 @@ class Server():
                 return False, "Unknown device", None
 
         elif command['command'] == 'register':
-            if command['device'].lower() in self.devices:
+            if command['name'].lower() in self.devices:
                 return False, "Device already registered", None
             elif addr in self.device_directory.keys():
                 return False, "Address already registered", None
             else:
-                self.devices[command['device'].lower()] = Device(
-                    name=command['device'].lower(),
+                self.devices[command['name'].lower()] = Device(
+                    name=command['name'].lower(),
                     socket=conn,
                     address=addr,
                     version=command.get('version', None),
                     description=command.get('description', None),
                     interface=command.get('interface', None),
                 )
-                self.device_directory[addr] = command['device']
+                self.device_directory[addr] = command['name']
 
         elif command['command'] == 'unregister':
             if 'device' not in command.keys():
