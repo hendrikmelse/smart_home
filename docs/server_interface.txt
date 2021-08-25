@@ -1,0 +1,61 @@
+Messages sent to the server must be json literals which define the
+following keys:
+    target: The intended recipient of the message
+    payload: The content of the message to send to the recipient
+If the message is sent from a client who's IP address is not
+registered, or the target is not found in the devices list, then
+the payload will not be processed.
+
+If the target is "Server", then the message will be consumed by
+the server directly, the payload must be a json literal which
+defines the "command" key. Valid commands are:
+    get_devices: Responds with a json literal which lists all of
+                    the currently online devices
+    device_info: Must also specify a target device using the
+                    "device" key. Responds with informtion about the
+                    specified device.
+    device_interface: Must also specify a target device using the
+                        "device" key. Responds with information about
+                        the target device interface.
+    register: Register a device (see below).
+    unregister: Unregister a device (see below).
+
+
+When registering a device, the payload must define the "name" key,
+which specifies the the name by which other devices connected to
+the server can contact it. Optionally (and recommended), the device
+may also define any or all of the following keys:
+    description: A short description of what the device is.
+    version: The software version of the device.
+    interface: The interface for the device to be communicated with.
+                   If the interface description is more than a few
+                   hundred characters. The device should instead
+                   provide a link to the location of the interface
+                   document online.
+This information will be made available to other devices connected
+to the server if and when they request it.
+
+When unregistering a device, if the payload defines the "device" key,
+then the server will unregister the device and the associated address.
+If the payload does not devine the "device" key, then the server will
+unregister the device associated with the IP address from which the
+command was received.
+
+
+If the target is not "Server", then the server will look for a
+matching device, and forward the payload to that device. The message
+to the deivce is a json literal with the following keys:
+    sender: The device name of the sender
+    sender_address: The IP address of the sender
+    payload: The content of the message from the sender
+
+
+The server will respond to every message received with a json
+literal that includes the following keys:
+    success: Boolean indicating whether the server was successful
+                in parsing and excecuting the command
+    message: A string containing any error messages
+    (optional) response: When necessary, will contain arbitrary data
+                             depending on what it is responding to
+
+No messages sent or received may be more than 1024 characters long
