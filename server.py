@@ -123,8 +123,8 @@ class Server():
             except Exception as ex:
                 self._log(f'Failed to excecute command with exception: {ex}')
                 self._send_response(conn, False, (
-                    '"Failed to parse data, make sure the message is a json '
-                    'literal and is fewer than 1024 characters long."'
+                    'Failed to parse data, make sure the message is a json '
+                    'literal and is fewer than 1024 characters long.'
                 ))
                 continue
 
@@ -161,40 +161,48 @@ class Server():
 
         if command['command'] == 'get_devices':
             response = list(self.devices.keys())
-
-        elif command['command'] == 'device_info':
-            if command['device'].lower() in self.devices:
-                response = str(self.devices[command['device'].lower()])
+            """
+self.name = name
+self.socket = socket
+self.address = address
+self.version = version
+self.description = description
+self.interface = interface
+"""
+        elif command['command'] == 'get_device_info':
+            if command['device_name'].lower() in self.devices:
+                device = self.devices[command['device_name']]
+                response = {'name': device.name}
+                if device.version is not None:
+                    response['version'] = device.version
+                if device.description is not None:
+                    response['description'] = device.description
+                if device.interface is not None:
+                    response['interface'] = device.interface
             else:
-                return False, "Unknown device", None
-
-        elif command['command'] == 'device_interface':
-            if command['device'].lower() in self.devices:
-                response = str(self.devices[command['device'].lower()].interface)
-            else:
-                return False, "Unknown device", None
+                return False, 'Unknown device', None
 
         elif command['command'] == 'register':
-            if command['name'].lower() in self.devices:
-                return False, "Device already registered", None
+            if command['device_name'].lower() in self.devices:
+                return False, 'Device already registered', None
             elif addr in self.device_directory.keys():
-                return False, "Address already registered", None
+                return False, 'Address already registered', None
             else:
-                self.devices[command['name'].lower()] = Device(
-                    name=command['name'].lower(),
+                self.devices[command['device_name'].lower()] = Device(
+                    name=command['device_name'].lower(),
                     socket=conn,
                     address=addr,
                     version=command.get('version', None),
                     description=command.get('description', None),
                     interface=command.get('interface', None),
                 )
-                self.device_directory[addr] = command['name']
+                self.device_directory[addr] = command['name_device']
 
         elif command['command'] == 'unregister':
-            if 'device' not in command.keys():
+            if 'device_name' not in command.keys():
                 # Unregister by sender IP
                 if addr not in self.device_directory.keys():
-                    return False, "Address not registered", None
+                    return False, 'Address not registered', None
                 else:
                     self.devices.pop(self.device_directory[addr])
                     self.device_directory.pop(addr)
@@ -206,7 +214,7 @@ class Server():
                     self.device_directory.pop(self.devices[command['device'].lower()].address)
                     self.devices.pop(command['device'].lower())
         
-        return True, "", response
+        return True, '', response
 
     def _log(self, message, level=None):
         """Log a message. For now, just print to the console."""
