@@ -19,33 +19,58 @@ def main():
             action = menu(title="Choose an action", options=[
                 'List registered devices',
                 'Register self as "server_manager"',
-                'Unregister a device',
+                'Unregister self',
                 'Get info about a device',
+                'Quit',
             ])
             print()
             if action == 0:  # List devices
-                print('Registered devices:')
                 devices = get_devices(sock)
                 if len(devices) == 0:
                     print('No registered devices')
                 else:
+                    print('Registered devices:')
                     for device in get_devices(sock):
                         print(device)
             elif action == 1:  # Register self
                 sock.sendall(format_server_message(
                     command='register',
-                    name='server_manager',
-                    description='A tool to access the server manually',
+                    device_name='server_manager',
+                    description='A tool to interact with the server manually',
                 ))
                 response = json.loads(sock.recv(1024).decode())
                 if response['success']:
-                    print('success')
+                    print('Success')
                 else:
                     print('Something went wrong')
             elif action == 2:  # Unregister a device
-                ...
+                sock.sendall(format_server_message(command='unregister'))
+                response = json.loads(sock.recv(1024).decode())
+                if response['success']:
+                    print('Success')
+                else:
+                    print('Something went wrong')
             elif action == 3:  # Get info about a device
-                ...
+                devices = get_devices(sock)
+                if len(devices) == 0:
+                    print('No registered devices')
+                else:
+                    device = menu(
+                        title='Choose a device to get info about',
+                        options=devices,
+                    )
+                    print()
+                    success, info = get_device_info(sock, devices[device])
+                    if success:
+                        for k, v in info.items():
+                            print(f'{k}: {v}')
+                    else:
+                        print('Something went wrong')
+                    
+            elif action == 4: # Quit
+                print('Goodbye')
+                return
+                
 
 def menu(title=None, options=None):
     """Display a simple console menu. Return the index of the option"""
@@ -68,9 +93,19 @@ def menu(title=None, options=None):
     return choice - 1
 
 def get_devices(sock):
+    """Query the server for a list of registered devices"""
     sock.sendall(format_server_message('get_devices'))
     response = json.loads(sock.recv(1024).decode())
     return response.get('response', None)
+
+def get_device_info(sock, device):
+    """Get information from the server about a device"""
+    sock.sendall(format_server_message(
+        command='get_device_info',
+        device_name=device
+    ))
+    response = json.loads(sock.recv(1024))
+    return response.get('success'), response.get('response')
 
 def format_server_message(command, **kwargs):
     """
