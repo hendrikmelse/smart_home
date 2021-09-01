@@ -1,11 +1,11 @@
 """
-Script to spin up the server, configre the debugger,
+Script to spin up the server
 and set up miscellaneous other things
 """
 
 import logging
 
-from server import Server
+from server.server import Server
 
 server = Server()
 server.run()
