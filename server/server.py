@@ -179,7 +179,7 @@ class Server():
                 return False, {'error_message': 'Cannot unregister an already unregistered device'}
             
             self.devices.pop(self.device_directory[addr])
-            sef.device_directory.pop(addr)
+            self.device_directory.pop(addr)
 
             return True, {}
 

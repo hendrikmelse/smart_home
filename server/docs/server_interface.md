@@ -63,8 +63,8 @@ To send a command to an led strip, a client might send the following packet:
 
 ### Receiving Packets from Other Devices
 The server will forward packets to targets as json literals that define the following keys:
-    `sender`: The name of the device from which the packet is coming.
-    `payload`: The content of the packet.
+- `sender`: The name of the device from which the packet is coming.
+- `payload`: The content of the packet.
 
 #### Example
 A packet received by an led strip might look like:
