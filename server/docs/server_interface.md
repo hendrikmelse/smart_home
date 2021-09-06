@@ -21,9 +21,9 @@ Depending on what the original packet was and what the response is, the server m
 - `response`: When necessary, will contain arbitrary data depending on what it is responding to.
 
 ## Talking to the Server
-If the target is `server`, then the packet will be consumed by the server directly, the payload must be a dictionaly which defines the `command` key. Depending on what the command is, the payload my also define other keys. Valid commands are:
+If the target is `server`, then the packet will be consumed by the server directly, the payload must be a dictionary which defines the `command` key. Depending on what the command is, the payload my also define other keys. Valid commands are:
 - `get_devices`: Get a list of all currently registered devices.
-- `get_device_info`: Get information about a particular device. The payload must define the `device_name` key to specify which device. The server will respond with a dictionary containing imformation about the device.
+- `get_device_info`: Get information about a particular device. The payload must define the `device_name` key to specify which device. The server will respond with a dictionary containing information about the device.
 - `register`: Register a device (see below).
 - `unregister`: Unregister a device (see below).
 
@@ -43,10 +43,12 @@ A device may only register itself. When registering, the payload must be a dicti
 - `interface`: The interface for the device to be communicated with. Typically, the device should instead provide a link to the location of the interface document online.
 This information will be made available to other devices connected to the server when requested.
 
+Additionally, the device may define the `force` key and set its value to `true` to tell the server to register the device even if a device with that name already exists, or the address is already registered to a device with another name.
+
 #### Example
 An led strip might send the following command to register itself:
 
-`{"target": "server", "payload": {"device_name": "led_strip", "description": "A simple commandable LED strip.", "version": "1.0.1"}}`
+`{"target": "server", "payload": {"command": "register", "device_name": "led_strip", "description": "A simple commandable LED strip.", "version": "1.0.1"}}`
 
 ### Unregister
 A device may only unregister itself. No other payload arguments are necessary, as the server can identify the device by its ip address.
@@ -70,3 +72,6 @@ The server will forward packets to targets as json literals that define the foll
 A packet received by an led strip might look like:
 
 `{"sender": "smart_switch_3", "payload": {"command": "on", "color": [128, 0, 255]}}`
+
+## Notes
+Clients should take care to check if messages received from the server are responses to their own commands, or if they are messages from other devices on the network. It is possible that messages are received not in the order that the client expects, e.g. another device on the network sends a packet to a client in between when the client sends a request to the server and the server sends a response.

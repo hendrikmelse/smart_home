@@ -37,10 +37,10 @@ def is_valid_packet(packet) -> (bool, str):
     
     if payload['command'] == 'get_device_info':
         if 'device_name' not in payload.keys():
-            return False, 'Payload must specify a device'
+            return False, 'Payload must specify a device name'
     
     if payload['command'] == 'register':
         if 'device_name' not in payload.keys():
-            return False, 'Payload must specify a device'
+            return False, 'Payload must specify a device name'
     
     return True, ''
