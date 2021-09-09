@@ -5,7 +5,7 @@ and set up miscellaneous other things
 
 import logging
 
-from server.server import Server
+from server import Server
 
 server = Server()
 server.run()

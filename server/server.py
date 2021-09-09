@@ -5,8 +5,8 @@ import threading
 from enum import Enum
 import logging
 
-from .device import Device
-from .packet_validator import is_valid_packet
+from device import Device
+from packet_validator import is_valid_packet
 
 HOST = '192.168.1.33'
 PORT = 42069
@@ -96,7 +96,7 @@ class Server():
                 packet = json.loads(data)
             except Exception as ex:
                 self._log(f'{addr}: Failed to parse packet: {ex}', level=DEBUG)
-                self._send_response(conn,
+                self._send_response(conn, addr,
                     success=False, 
                     error_message='Packet must be a valid json literal no longer than 1024 characters',
                 )
