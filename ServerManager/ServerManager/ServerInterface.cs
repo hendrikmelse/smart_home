@@ -71,6 +71,13 @@ namespace ServerManager
             return ServerResponsePacket.Deserialize(GetServerResponse());
         }
 
+        public ServerResponsePacket SendRawPayload(string target, string payload)
+        {
+            this.sock.Send(Encoding.ASCII.GetBytes($"{{\"target\":\"{target}\",\"payload\":{payload}}}"));
+
+            return ServerResponsePacket.Deserialize(GetServerResponse());
+        }
+
         private void Send(SentPacket packet)
         {
             this.sock.Send(Encoding.ASCII.GetBytes(packet.Serialize()));

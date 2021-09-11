@@ -1,3 +1,5 @@
+wifi_info.h
+
 *.log
 __pycache__/
 

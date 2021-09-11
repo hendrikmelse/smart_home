@@ -33,7 +33,7 @@ namespace ServerManager
                 return;
             }
 
-            var response = this.server.SendPayload(target, this.textBoxSendPayload.Text);
+            var response = this.server.SendRawPayload(target, this.textBoxSendPayload.Text);
 
             if (!response.success)
                 this.richTextBoxMonitor.Text += $"Failed to send payload: {response.error_message}\n";
