@@ -148,10 +148,10 @@ class Server():
         """
         
         if target_name not in self.devices:
-            return False, f'Device "{target_name}" is not a registered device'
+            return False, {'error_message': f'Device "{target_name}" is not a registered device'}
         
         if source_addr not in self.device_directory:
-            return False, 'Device must be registered to send packets to other devices'
+            return False, {'error_message': 'Device must be registered to send packets to other devices'}
 
         target_device = self.devices[target_name]
         source_name = self.device_directory[source_addr]
@@ -199,7 +199,10 @@ class Server():
             force_register = payload.get("force", False)
 
             if device_name in reserved_device_names:
-                return False, {'error, message': f'The device name "{device_name}" is reserved'}
+                return False, {'error_message': f'The device name "{device_name}" is reserved'}
+
+            if device_name is None:
+                return False, {'error_message': 'Device name cannot be None'}
 
             if device_name in self.devices and not force_register:
                 return False, {'error_message': f'Device "{device_name}" already registered'}
@@ -233,6 +236,7 @@ class Server():
 
             return True, {}
 
-    def _log(self, message, level=None):
+    def _log(self, message, level=INFO):
         """Log a message. For now, just print to the console."""
+
         print(f'{level} {message}')
