@@ -31,7 +31,7 @@ In order to turn on/off leds, you must send a command. Allowed commands are:
 ```
 
 ### Timeout
-The timeout defines how long the command will remain active on the strip before lower priority commands are allowed to be executed. If not defined, it defaults to 60 seconds
+The timeout defines how long the command will remain active on the strip before lower priority commands are allowed to be executed. If not defined, it defaults to 60 seconds. After the timeout is reached, the next-highest priority command that has not yet timed out will be executed.
 
 ### Priority
-The priority tells the controller
+The priority tells the controller whether to listed to the command or not. A higher number means higher priority. If a command is sent with the same priority as the currently running command, then the new command WILL be executed.
