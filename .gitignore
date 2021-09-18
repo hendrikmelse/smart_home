@@ -1,5 +1,7 @@
 wifi_info.h
 
+*.code-workspace
+
 *.log
 __pycache__/
 

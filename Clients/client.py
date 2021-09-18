@@ -2,6 +2,7 @@ import socket
 import json
 from io import BlockingIOError
 
+
 class Client():
     """A generic client for interacting with the server"""
 
