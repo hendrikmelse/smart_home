@@ -1,6 +1,6 @@
 # led_strip_manager
 
-This client registers itself to the server as `led_strip_manager`.
+This client registers itself to the server as `led_strip_manager`. It connects the the server and listens for commands. When it receives a command, it sends the appropriate signal to the led strip device.
 
 ## Receiving Payloads
 Payloads to the LED strip manager should be dictionaries defining the following keys:

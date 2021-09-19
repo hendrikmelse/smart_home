@@ -26,7 +26,7 @@ reserved_device_names = [
 class Server():
     """The server"""
 
-    server_interface = 'https://github.com/hendrikmelse/smart_home/blob/master/server/docs/server_interface.md'
+    server_interface = 'https://github.com/hendrikmelse/smart_home/blob/master/server/README.md'
     
     def __init__(self):
         self.logger = logging.getLogger
@@ -240,3 +240,11 @@ class Server():
         """Log a message. For now, just print to the console."""
 
         print(f'{level} {message}')
+
+
+def main():
+    server = Server()
+    server.run()
+
+if __name__ == "__main__":
+    main()
