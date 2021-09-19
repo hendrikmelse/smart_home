@@ -12,21 +12,35 @@ namespace ServerManager
         Socket sock;
         List<ReceivePayloadPacket> packets;
 
+        public bool Connected { get; private set; }
+
         public ServerInterface()
         {
-            IPAddress remoteIP = IPAddress.Parse("192.168.1.33");
-
-            this.sock = new Socket(remoteIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            this.sock.Connect(new IPEndPoint(remoteIP, 42069));
-
             this.packets = new List<ReceivePayloadPacket>();
+            this.Connected = false;
+        }
+
+        public bool Connect()
+        {
+            try
+            {
+                IPAddress remoteIP = IPAddress.Parse("192.168.1.33");
+                this.sock = new Socket(remoteIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                this.sock.Connect(new IPEndPoint(remoteIP, 42069));
+                this.Connected = true;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public List<ReceivePayloadPacket> IncomingPayloads
         {
             get
             {
-                while (this.sock.Available > 0)
+                while (this.sock != null && this.sock.Available > 0)
                 {
                     this.packets.Add(ReceivePayloadPacket.Deserialize(this.Receive()));
                 }
@@ -38,6 +52,11 @@ namespace ServerManager
 
         public GetDevicesResponsePacket GetDevices()
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.Send(new GetDevicesPacket());
 
             return GetDevicesResponsePacket.Deserialize(this.GetServerResponse());
@@ -45,6 +64,11 @@ namespace ServerManager
 
         public RegisterDeviceResponsePacket Register(string name, string description, string version, string @interface, bool force)
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.Send(new RegisterDevicePacket(name, description, version, @interface, force));
 
             return RegisterDeviceResponsePacket.Deserialize(this.GetServerResponse());
@@ -52,6 +76,11 @@ namespace ServerManager
 
         public UnregisterDeviceResponsePacket Unregister()
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.Send(new UnregisterDevicePacket());
 
             return UnregisterDeviceResponsePacket.Deserialize(this.GetServerResponse());
@@ -59,6 +88,11 @@ namespace ServerManager
 
         public GetDeviceInfoResponsePacket GetDeviceInfo(string deviceName)
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.Send(new GetDeviceInfoPacket(deviceName));
 
             return GetDeviceInfoResponsePacket.Deserialize(this.GetServerResponse());
@@ -66,6 +100,11 @@ namespace ServerManager
 
         public ServerResponsePacket SendPayload(string target, string payload)
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.Send(new SendPayloadPacket(target, payload));
 
             return ServerResponsePacket.Deserialize(GetServerResponse());
@@ -73,6 +112,11 @@ namespace ServerManager
 
         public ServerResponsePacket SendRawPayload(string target, string payload)
         {
+            if (!this.Connected)
+            {
+                return null;
+            }
+
             this.sock.Send(Encoding.ASCII.GetBytes($"{{\"target\":\"{target}\",\"payload\":{payload}}}"));
 
             return ServerResponsePacket.Deserialize(GetServerResponse());

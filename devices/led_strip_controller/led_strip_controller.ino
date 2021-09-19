@@ -1,53 +1,80 @@
 #include <ESP8266WiFi.h>
 #include <Adafruit_NeoPixel.h>
-#include <string>
-#include <string.h>
-#include "smart_home_client.h"
 
 // Doing this so I can .gitignore wifi_info.h
 // wifi_info.h #defines WIFI_SSID and WIFI_PASSWORD
 #include "wifi_info.h"
+
+/* Protocol
+ * Listen for commands coming in over WiFi
+ * Data will be formatted as:
+ * 1 byte: command
+ * n bytes: data, number of bytes depends on command
+ * 
+ * Note that messages cannot be longer than 256 bytes total
+ * 
+ * Command codes are
+ * 0x00 - turn entire strip off
+ * 0x10 - turn strip off in memory, but don't show on the leds
+ * 0x01 - turn entire strip on
+ *        3 data bytes: [r, g, b]
+ * 0x11 - turn entire strip on, but don't show on the leds
+ *        3 data bytes: [r, g, b]
+ * 0x02 - fill a portion of the strip
+ *        5 data bytes: [start, end, r, g, b]
+ * 0x12 - fill a portion of the strip, but don't show on the leds
+ *        5 data bytes: [start, end, r, g, b]
+ * 0x03 - set leds custom
+ *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
+ * 0x13 - set leds custom, but don't show on the leds
+ *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
+ * 0x20 - revert to idle animation
+ * 0x80 - set the brghtness
+ *        1 data byte: brightness
+ */
 
 #define LED_PIN 5
 #define STRIP_PIN 4
 
 #define LED_COUNT 60
 
-std::string host = "192.168.1.33";
-const int port = 42069;
+const int port = 12321;
+WiFiServer server(port);
 
-SmartHomeClient shClient;
-
-StaticJsonDocument<1024> doc;
 Adafruit_NeoPixel strip(LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
+
+bool idling = false;
 
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   pinMode(STRIP_PIN, OUTPUT);
+
+  // Flash the LED to indicate program start
   for (int i = 0; i < 5; ++i) {
     digitalWrite(LED_PIN, HIGH);
-    delay(100);
+    delay(50);
     digitalWrite(LED_PIN, LOW);
-    delay(100);
+    delay(50);
   }
   Serial.printf("\n");
 
+  // Connect to the WiFi network
   Serial.printf("Connecting to %s", WIFI_SSID);
-
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.printf(".");
   }
-
   Serial.printf("Connected\n");
+  Serial.printf("IP address: ");
+  Serial.println(WiFi.localIP());
 
-  Serial.printf("Connecting smart home client...\n");
-  shClient.connect(host, port);
-  Serial.printf("Connected\n");
-  shClient.register_device("led_strip");
+  // Start listening for incoming connections
+  server.begin();
+  Serial.printf("Listening for connections on port %d\n", port);
 
+  // Initialize the LED strip
   strip.begin();
   strip.setBrightness(20);
   strip.clear();
@@ -55,21 +82,84 @@ void setup() {
 }
 
 void loop() {
-  if (shClient.payload_available()) {
-    shClient.get_incoming_payload(doc);
-    const char* sender = doc["sender"];
-    const char* payload = doc["payload"];
-    Serial.printf("Sender: %s\n", sender);
-    Serial.printf("Payload: %s\n", payload);
-    Serial.println();
+  WiFiClient client = server.available();
 
-    if (strcmp(payload, "on") == 0) {
-      strip.fill(strip.Color(128, 0, 255));
-      strip.show();
+  if (client) {
+    Serial.printf("Client connected\n");
+    while (client.connected()) {
+      if (client.available() > 0) {
+        byte command = client.read();
+        Serial.printf("Got command: %d\n", command);
+        
+        if (command == 0x80) {
+          strip.setBrightness(client.read());
+          strip.show();
+          continue;
+        }
+        else if (command == 0x20) {
+          idling = true;
+          continue;
+        }
+        else {
+          idling = false;
+        }
+
+        switch(command & 0xF) {
+          case 0x0:
+            strip.clear();
+            break;
+          case 0x1:
+            Fill(client);
+            break;
+          case 0x2:
+            FillPortion(client);
+            break;
+          case 0x3:
+            Custom(client);
+            break;
+        }
+
+        if ((command & 0x10) == 0) {
+          Serial.printf("Showing leds\n");
+          strip.show();
+        }
+      }
+      
     }
-    else if (strcmp(payload, "off") == 0) {
-      strip.clear();
-      strip.show();
-    }
+    Serial.printf("Client disconnected\n");
   }
 }
+
+void Fill(WiFiClient& client) {
+  byte r = client.read();
+  byte g = client.read();
+  byte b = client.read();
+  strip.fill(strip.Color(r, g, b));
+}
+
+void FillPortion(WiFiClient& client) {
+  byte start = client.read();
+  byte end = client.read();
+  byte r = client.read();
+  byte g = client.read();
+  byte b = client.read();
+  Serial.printf("filling portion from %d to %d with %d, %d, %d\n", start, end, r, g, b);
+  strip.fill(strip.Color(r, g, b), start, end - start);
+}
+
+void Custom(WiFiClient& client) {
+  for (byte remaining_indicies = client.read(); remaining_indicies > 0; --remaining_indicies) {
+    byte index = client.read();
+    byte r = client.read();
+    byte g = client.read();
+    byte b = client.read();
+    strip.setPixelColor(index, strip.Color(r, g, b));
+  }
+}
+
+/*void advance_idle_frame() {
+  while ((unsigned long)(micros() - last_frame_time) < idle_frame_time);
+  
+  strip.clear();
+  
+}*/

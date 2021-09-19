@@ -46,6 +46,7 @@ namespace ServerManager
             this.buttonSendPayload = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonCheckForPayloads = new System.Windows.Forms.Button();
+            this.buttonConnect = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // richTextBoxMonitor
@@ -93,7 +94,7 @@ namespace ServerManager
             // 
             // buttonRegister
             // 
-            this.buttonRegister.Location = new System.Drawing.Point(12, 60);
+            this.buttonRegister.Location = new System.Drawing.Point(12, 85);
             this.buttonRegister.Name = "buttonRegister";
             this.buttonRegister.Size = new System.Drawing.Size(200, 23);
             this.buttonRegister.TabIndex = 5;
@@ -103,16 +104,16 @@ namespace ServerManager
             // 
             // textBoxDeviceName
             // 
-            this.textBoxDeviceName.Location = new System.Drawing.Point(12, 31);
+            this.textBoxDeviceName.Location = new System.Drawing.Point(12, 56);
             this.textBoxDeviceName.Name = "textBoxDeviceName";
-            this.textBoxDeviceName.Size = new System.Drawing.Size(199, 23);
+            this.textBoxDeviceName.Size = new System.Drawing.Size(200, 23);
             this.textBoxDeviceName.TabIndex = 6;
             this.textBoxDeviceName.Text = "server_manager";
             // 
             // labelDeviceName
             // 
             this.labelDeviceName.AutoSize = true;
-            this.labelDeviceName.Location = new System.Drawing.Point(12, 13);
+            this.labelDeviceName.Location = new System.Drawing.Point(12, 38);
             this.labelDeviceName.Name = "labelDeviceName";
             this.labelDeviceName.Size = new System.Drawing.Size(77, 15);
             this.labelDeviceName.TabIndex = 7;
@@ -120,7 +121,7 @@ namespace ServerManager
             // 
             // buttonUnregister
             // 
-            this.buttonUnregister.Location = new System.Drawing.Point(13, 115);
+            this.buttonUnregister.Location = new System.Drawing.Point(12, 139);
             this.buttonUnregister.Name = "buttonUnregister";
             this.buttonUnregister.Size = new System.Drawing.Size(200, 23);
             this.buttonUnregister.TabIndex = 8;
@@ -162,7 +163,7 @@ namespace ServerManager
             // 
             // buttonGetInfo
             // 
-            this.buttonGetInfo.Location = new System.Drawing.Point(13, 144);
+            this.buttonGetInfo.Location = new System.Drawing.Point(12, 168);
             this.buttonGetInfo.Name = "buttonGetInfo";
             this.buttonGetInfo.Size = new System.Drawing.Size(200, 23);
             this.buttonGetInfo.TabIndex = 12;
@@ -173,7 +174,7 @@ namespace ServerManager
             // checkBoxForceRegister
             // 
             this.checkBoxForceRegister.AutoSize = true;
-            this.checkBoxForceRegister.Location = new System.Drawing.Point(13, 90);
+            this.checkBoxForceRegister.Location = new System.Drawing.Point(12, 114);
             this.checkBoxForceRegister.Name = "checkBoxForceRegister";
             this.checkBoxForceRegister.Size = new System.Drawing.Size(100, 19);
             this.checkBoxForceRegister.TabIndex = 13;
@@ -188,6 +189,7 @@ namespace ServerManager
             this.textBoxSendPayload.Name = "textBoxSendPayload";
             this.textBoxSendPayload.Size = new System.Drawing.Size(738, 23);
             this.textBoxSendPayload.TabIndex = 14;
+            this.textBoxSendPayload.KeyUp += new System.Windows.Forms.KeyEventHandler(this.textBoxSendPayload_KeyUp);
             // 
             // buttonSendPayload
             // 
@@ -212,19 +214,30 @@ namespace ServerManager
             // 
             // buttonCheckForPayloads
             // 
-            this.buttonCheckForPayloads.Location = new System.Drawing.Point(13, 174);
+            this.buttonCheckForPayloads.Location = new System.Drawing.Point(12, 197);
             this.buttonCheckForPayloads.Name = "buttonCheckForPayloads";
-            this.buttonCheckForPayloads.Size = new System.Drawing.Size(198, 23);
+            this.buttonCheckForPayloads.Size = new System.Drawing.Size(200, 23);
             this.buttonCheckForPayloads.TabIndex = 17;
             this.buttonCheckForPayloads.Text = "Check For Payloads";
             this.buttonCheckForPayloads.UseVisualStyleBackColor = true;
             this.buttonCheckForPayloads.Click += new System.EventHandler(this.buttonCheckForPayloads_Click);
+            // 
+            // buttonConnect
+            // 
+            this.buttonConnect.Location = new System.Drawing.Point(12, 12);
+            this.buttonConnect.Name = "buttonConnect";
+            this.buttonConnect.Size = new System.Drawing.Size(200, 23);
+            this.buttonConnect.TabIndex = 18;
+            this.buttonConnect.Text = "Connect";
+            this.buttonConnect.UseVisualStyleBackColor = true;
+            this.buttonConnect.Click += new System.EventHandler(this.buttonConnect_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(828, 432);
+            this.Controls.Add(this.buttonConnect);
             this.Controls.Add(this.buttonCheckForPayloads);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.buttonSendPayload);
@@ -269,6 +282,7 @@ namespace ServerManager
         private System.Windows.Forms.Button buttonSendPayload;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button buttonCheckForPayloads;
+        private System.Windows.Forms.Button buttonConnect;
     }
 }
 

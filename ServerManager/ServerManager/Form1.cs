@@ -13,13 +13,24 @@ namespace ServerManager
             this.server = new ServerInterface();
         }
 
+        private void Log(string message)
+        {
+            this.richTextBoxMonitor.Text += $"{message}\n";
+        }
+
         private void RefreshRegisteredDevices()
         {
             this.listBoxRegisteredDevices.Items.Clear();
             var response = this.server.GetDevices();
 
+            if (response == null)
+            {
+                this.Log("Not connected");
+                return;
+            }
+
             if (!response.success)
-                this.richTextBoxMonitor.Text += ($"Get devices failed: {response.error_message}\n");
+                this.Log($"Get devices failed: {response.error_message}");
             else
                 this.listBoxRegisteredDevices.Items.AddRange(response.response);
         }
@@ -29,21 +40,38 @@ namespace ServerManager
             string target = (string)this.listBoxRegisteredDevices.SelectedItem;
             if (target == null)
             {
-                this.richTextBoxMonitor.Text += "Must select device to send message to\n";
+                this.Log("Must select device to send message to");
                 return;
             }
 
             var response = this.server.SendRawPayload(target, this.textBoxSendPayload.Text);
 
+            if (response == null)
+            {
+                this.Log("Not connected");
+                return;
+            }
+
             if (!response.success)
-                this.richTextBoxMonitor.Text += $"Failed to send payload: {response.error_message}\n";
+                this.Log($"Failed to send payload: {response.error_message}");
             else
-                this.richTextBoxMonitor.Text += "Sent payload\n";
+                this.Log("Sent payload");
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            this.RefreshRegisteredDevices();
+        }
+
+        private void buttonConnect_Click(object sender, EventArgs e)
+        {
+            if (this.server.Connect())
+            {
+                this.Log("Connected to server");
+            }
+            else
+            {
+                this.Log("Could not connect to server");
+            }
         }
 
         private void buttonRefreshDevicesList_Click(object sender, EventArgs e)
@@ -61,10 +89,16 @@ namespace ServerManager
                 this.checkBoxForceRegister.Checked
             );
 
+            if (response == null)
+            {
+                this.Log("Not connected");
+                return;
+            }
+
             if (!response.success)
-                this.richTextBoxMonitor.Text += $"Error registering device: {response.error_message}\n";
+                this.Log($"Error registering device: {response.error_message}");
             else
-                this.richTextBoxMonitor.Text += $"Registered device: {this.textBoxDeviceName.Text}\n";
+                this.Log($"Registered device: {this.textBoxDeviceName.Text}");
 
             this.RefreshRegisteredDevices();
         }
@@ -73,10 +107,16 @@ namespace ServerManager
         {
             var response = this.server.Unregister();
 
+            if (response == null)
+            {
+                this.Log("Not connected");
+                return;
+            }
+
             if (!response.success)
-                this.richTextBoxMonitor.Text += $"Error unregistering device: {response.error_message}\n";
+                this.Log($"Error unregistering device: {response.error_message}");
             else
-                this.richTextBoxMonitor.Text += $"Unregistered device\n";
+                this.Log($"Unregistered device");
 
             this.RefreshRegisteredDevices();
         }
@@ -87,7 +127,7 @@ namespace ServerManager
 
             if (selectedDevice == null)
             {
-                this.richTextBoxMonitor.Text += "No device selected\n";
+                this.Log("No device selected");
                 return;
             }
 
@@ -100,6 +140,14 @@ namespace ServerManager
         private void buttonSendPayload_Click(object sender, EventArgs e)
         {
             this.SentPayloadToDevice();
+        }
+
+        private void textBoxSendPayload_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                this.SentPayloadToDevice();
+            }
         }
 
         private void buttonCheckForPayloads_Click(object sender, EventArgs e)
@@ -122,6 +170,7 @@ namespace ServerManager
 
         private void richTextBoxMonitor_TextChanged(object sender, EventArgs e)
         {
+            // Make the monitor box scroll with added text
             this.richTextBoxMonitor.SelectionStart = this.richTextBoxMonitor.Text.Length;
             this.richTextBoxMonitor.ScrollToCaret();
         }
