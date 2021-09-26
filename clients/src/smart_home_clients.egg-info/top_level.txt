@@ -1,2 +1,3 @@
+air_quality_reporter
 generic_clients
 led_strip_manager

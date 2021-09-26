@@ -3,33 +3,32 @@ import json
 import tenacity
 import threading
 from enum import Enum
-import logging
+import logging as log
 
 from device import Device
 from packet_validator import is_valid_packet
 
-HOST = '192.168.1.33'
+HOST = "192.168.1.33"
 PORT = 42069
 
-DEBUG   = 'DEBUG:  '
-INFO    = 'INFO:   '
-WARNING = 'WARNING:'
-ERROR   = 'ERROR:  '
-
-max_sock_bind_attempts = 3
+max_sock_bind_attempts = 10
 
 reserved_device_names = [
-    'server',
-    'gerald'
+    "server",
+    "gerald"
 ]
 
 class Server():
     """The server"""
 
-    server_interface = 'https://github.com/hendrikmelse/smart_home/blob/master/server/README.md'
+    server_interface = "https://github.com/hendrikmelse/smart_home/blob/master/server/README.md"
     
     def __init__(self):
-        self.logger = logging.getLogger
+        log.basicConfig(
+            filename="/var/log/smart_home/server.log",
+            format="%(asctime)s %(levelname)s: %(message)s",
+            level=log.INFO,
+        )
 
         # keys are addresses: (ip_address: str, port: int)
         # values are device names: str
@@ -45,20 +44,22 @@ class Server():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
             self._bind_sock()
 
-            self._log('Waiting for connections...', level=INFO)
+            log.info("Waiting for connections...")
             self.sock.listen()
 
             while True:
                 conn, addr = self.sock.accept()
-                self._log(f'Connected by {addr[0]}:{addr[1]}', level=INFO)
+                log.info(f"Connected by {addr[0]}:{addr[1]}")
 
                 th = threading.Thread(target=self._client_handler, args=(conn, addr))
                 th.start()
 
+                log.debug(f"Active threads: {threading.active_count()}")
+
     @tenacity.retry(
         reraise=True,
         stop=tenacity.stop_after_attempt(max_sock_bind_attempts),
-        wait=tenacity.wait_fixed(5),
+        wait=tenacity.wait_fixed(10),
     )
     def _bind_sock(self):
         """
@@ -67,9 +68,9 @@ class Server():
         Preconditions:
             Socket must be initialized
         """
-        self._log(f'Binding socket to {HOST}:{PORT}...', level=INFO)
+        log.info(f"Binding socket to {HOST}:{PORT}...")
         self.sock.bind((HOST, PORT))
-        self._log(f'Socket bound to {HOST}:{PORT}', level=INFO)
+        log.info(f"Socket bound to {HOST}:{PORT}")
 
     def _client_handler(self, conn, addr):
         """Listen for incoming packets and execute them."""
@@ -78,37 +79,38 @@ class Server():
             try:
                 data = conn.recv(1024)
             except ConnectionResetError:
-                self._log(f'Connection reset by peer: {addr[0]}:{addr[1]}', level=INFO)
+                log.info(f"Connection reset by peer: {addr[0]}:{addr[1]}")
                 conn.close()
                 return
 
-            if data == b'':
-                self._log(f'Closing connection to {addr[0]}:{addr[1]}', level=INFO)
+            if data == b"":
+                log.info(f"Closing connection to {addr[0]}:{addr[1]}")
                 conn.close()
                 return
             
             # Turn data from bytes into string
             data = data.decode()
-            self._log(f'{addr}: Received packet: {data}', level=DEBUG)
+            log.debug(f"{addr}: Received packet: {data}")
 
             # Parse data
             try:
                 packet = json.loads(data)
             except Exception as ex:
-                self._log(f'{addr}: Failed to parse packet: {ex}', level=DEBUG)
+                log.info(f"{addr}: Failed to parse packet: {ex}")
                 self._send_response(conn, addr,
                     success=False, 
-                    error_message='Packet must be a valid json literal no longer than 1024 characters',
+                    error_message="Packet must be a valid json literal no longer than 1024 characters",
                 )
                 continue
             
-            if packet.get('target').lower() == 'gerald':
-                packet['target'] = 'server'
+            if packet.get("target").lower() == "gerald":
+                log.warn("Someone knows my real name!")
+                packet["target"] = "server"
 
             # Validate packet
             valid, error_message = is_valid_packet(packet)
             if not valid:
-                self._log(f'{addr}: Invalid packet: {error_message}', level=DEBUG)
+                log.info(f"{addr}: Invalid packet: {error_message}")
                 self._send_response(
                     conn,
                     addr,
@@ -118,11 +120,11 @@ class Server():
                 continue
 
             # Process packet
-            if packet['target'].lower() == 'server':
+            if packet["target"].lower() == "server":
                 # Packet is intended for the server
-                success, kwargs = self._server_process_packet(conn, addr, packet['payload'])
+                success, kwargs = self._server_process_packet(conn, addr, packet["payload"])
             else:
-                success, kwargs = self._process_packet(addr, packet['target'], packet['payload'])
+                success, kwargs = self._process_packet(addr, packet["target"], packet["payload"])
             
             self._send_response(conn, addr, success, **kwargs)
 
@@ -130,13 +132,13 @@ class Server():
         """Send a response back to the client"""
         
         r = {
-            'success': success,
+            "success": success,
             **kwargs,
         }
         
-        r = json.dumps(r, separators=(',', ':'))
+        r = json.dumps(r, separators=(",", ":"))
         
-        self._log(f'{addr}: Sending response: {r}', level=DEBUG)
+        log.debug(f"{addr}: Sending response: {r}")
         conn.sendall(r.encode())
 
     def _process_packet(self, source_addr: (str, int), target_name: str, payload):
@@ -148,10 +150,10 @@ class Server():
         """
         
         if target_name not in self.devices:
-            return False, {'error_message': f'Device "{target_name}" is not a registered device'}
+            return False, {"error_message": f"Device \"{target_name}\" is not a registered device"}
         
         if source_addr not in self.device_directory:
-            return False, {'error_message': 'Device must be registered to send packets to other devices'}
+            return False, {"error_message": "Device must be registered to send packets to other devices"}
 
         target_device = self.devices[target_name]
         source_name = self.device_directory[source_addr]
@@ -161,7 +163,7 @@ class Server():
             "payload": payload,
         }
 
-        target_device.socket.sendall(json.dumps(packet, separators=(',', ':')).encode())
+        target_device.socket.sendall(json.dumps(packet, separators=(",", ":")).encode())
 
         return True, {}
         
@@ -169,46 +171,46 @@ class Server():
     def _server_process_packet(self, conn, addr, payload):
         """Execute a command directed at the server"""
 
-        command = payload['command']
+        command = payload["command"]
 
-        if command == 'get_devices':
-            return True, {'response': list(self.devices.keys())}
+        if command == "get_devices":
+            return True, {"response": list(self.devices.keys())}
         
-        elif command == 'get_device_info':
-            device_name = payload['device_name']
+        elif command == "get_device_info":
+            device_name = payload["device_name"]
 
             if device_name not in self.devices:
-                return False, {'error_message': f'Device "{device_name}" not recognized'}
+                return False, {"error_message": f"Device \"{device_name}\" not recognized"}
             
             device = self.devices[device_name]
 
             response = {
-                'name': device.name,
-                'description': device.description,
-                'version': device.version,
-                'interface': device.interface,
+                "name": device.name,
+                "description": device.description,
+                "version": device.version,
+                "interface": device.interface,
             }
 
             # Remove any elements that are not populated
             response = {k: v for k, v in response.items() if v is not None}
 
-            return True, {'response': response}
+            return True, {"response": response}
 
-        elif command == 'register':
-            device_name = payload['device_name']
+        elif command == "register":
+            device_name = payload["device_name"]
             force_register = payload.get("force", False)
 
             if device_name in reserved_device_names:
-                return False, {'error_message': f'The device name "{device_name}" is reserved'}
+                return False, {"error_message": f"The device name \"{device_name}\" is reserved"}
 
             if device_name is None:
-                return False, {'error_message': 'Device name cannot be None'}
+                return False, {"error_message": "Device name cannot be None"}
 
             if device_name in self.devices and not force_register:
-                return False, {'error_message': f'Device "{device_name}" already registered'}
+                return False, {"error_message": f"Device \"{device_name}\" already registered"}
 
             if addr in self.device_directory and not force_register:
-                return False, {'error_message': f'This address is already registered to a different_device: {self.device_directory[addr]}'}
+                return False, {"error_message": f"This address is already registered to a different_device: {self.device_directory[addr]}"}
 
             # If exists, delete old device at same address
             if addr in self.device_directory:
@@ -220,26 +222,21 @@ class Server():
                 name=device_name,
                 socket=conn,
                 address=addr,
-                version=payload.get('version'),
-                description=payload.get('description'),
-                interface=payload.get('interface'),
+                version=payload.get("version"),
+                description=payload.get("description"),
+                interface=payload.get("interface"),
             )
 
             return True, {}
 
-        elif command == 'unregister':
+        elif command == "unregister":
             if addr not in self.device_directory:
-                return False, {'error_message': 'Cannot unregister a device that is not registered'}
+                return False, {"error_message": "Cannot unregister a device that is not registered"}
             
             self.devices.pop(self.device_directory[addr])
             self.device_directory.pop(addr)
 
             return True, {}
-
-    def _log(self, message, level=INFO):
-        """Log a message. For now, just print to the console."""
-
-        print(f'{level} {message}')
 
 
 def main():

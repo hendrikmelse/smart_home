@@ -16,14 +16,15 @@ class LedStripClient():
         else:
             self._client = Client(name, description=description, version=version, interface=interface)
         
-        self._priority = 0
-        self._command_timeout = 0
+        self.priority = 0
+        self.command_timeout = 0
     
     def __enter__(self):
         self._client.__enter__()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        self._client().__exit__()
+        self._client.__exit__(exc_type, exc_value, exc_traceback)
     
     def clear(color):
         payload = {
@@ -67,7 +68,7 @@ class LedStripClient():
         self._send_packet(payload)
     
     def _send_packet(self, payload):
-        payload["priority"] = self._priority
-        payload["timeout"] = self._command_timeout
+        payload["priority"] = self.priority
+        payload["timeout"] = self.command_timeout
         self._client.send_payload("led_strip_manager", payload)
 

@@ -1,4 +1,5 @@
 wifi_info.h
+*.api-key
 
 *.code-workspace
 

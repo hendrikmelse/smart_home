@@ -31,6 +31,7 @@ class Client():
     def __enter__(self):
         self.connect()
         self.register(force=True)
+        return self
     
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.unregister()
