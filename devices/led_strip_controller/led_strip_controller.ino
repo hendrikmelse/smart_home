@@ -5,6 +5,8 @@
 // wifi_info.h #defines WIFI_SSID and WIFI_PASSWORD
 #include "wifi_info.h"
 
+#include "Bouncer.h"
+
 /* Protocol
  * Listen for commands coming in over WiFi
  * Data will be formatted as:
@@ -28,6 +30,7 @@
  *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
  * 0x13 - set leds custom, but don't show on the leds
  *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
+ * 0x0F - show the leds
  * 0x20 - revert to idle animation
  * 0x80 - set the brghtness
  *        1 data byte: brightness
@@ -43,7 +46,11 @@ WiFiServer server(port);
 
 Adafruit_NeoPixel strip(LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
 
+const unsigned long frame_time_micros = 7000;
+unsigned long last_frame_time = 0;
+
 bool idling = false;
+Bouncer bouncer(&strip);
 
 void setup() {
   Serial.begin(115200);
@@ -79,6 +86,8 @@ void setup() {
   strip.setBrightness(20);
   strip.clear();
   strip.show();
+
+  last_frame_time = micros();
 }
 
 void loop() {
@@ -120,11 +129,18 @@ void loop() {
         }
 
         if ((command & 0x10) == 0) {
-          Serial.printf("Showing leds\n");
           strip.show();
         }
       }
-      
+
+      if (idling) {
+        while ((unsigned long)(micros() - last_frame_time) < frame_time_micros);
+        last_frame_time = micros();
+        
+        strip.clear();
+        bouncer.Next();
+        strip.show();
+      }
     }
     Serial.printf("Client disconnected\n");
   }
