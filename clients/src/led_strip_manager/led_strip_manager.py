@@ -34,7 +34,7 @@ class LedStripManager():
         log.basicConfig(
             filename="/var/log/smart_home/led_strip_manager.log",
             format="%(asctime)s %(levelname)s: %(message)s",
-            level=log.INFO,
+            level=log.DEBUG,
         )
 
         self._device_ip = device_ip
@@ -47,6 +47,9 @@ class LedStripManager():
         self._idling = False
 
         self._control_commands = ("brightness", "reset", "show")
+
+        self._repeat_idle_command_time = 0
+        self._next_ping_time = 0
 
         log.info("Starting manager...")
     
@@ -72,6 +75,8 @@ class LedStripManager():
 
     def _run_processing_loop(self):
         while True:
+
+            
             # Check for incoming packet
             packet = self._client.get_incoming_payload(blocking=False)
             if packet is not None:
@@ -85,8 +90,8 @@ class LedStripManager():
                 elif self._current_command.end_time < time.time():
                     log.debug("Current command timed out, switching to next in queue")
                     self._current_command = self._get_next_command()
-                    log.debug(f"Got command: {self._current_command}")
                     if self._current_command is not None:
+                        log.debug(f"Got command: {self._current_command}")
                         self._process_payload(self._current_command.payload)
             else:
                 # Got a packet, check if it is a control command
@@ -118,6 +123,12 @@ class LedStripManager():
                     self._current_command = incoming_command
                     if not self._process_payload(incoming_command.payload):
                         return
+
+    def _ping_device(self):
+        if time.time() > self._next_ping_time:
+            self._next_ping_time = time.time() + 5
+            self._send_to_leds([0xFF])
+
 
     def _get_next_command(self):
         while True:
@@ -165,8 +176,9 @@ class LedStripManager():
         return self._send_to_leds([0x0F])
 
     def _idle(self):
-        if not self._idling:
+        if not self._idling or time.time() > self._repeat_idle_command_time:
             self._idling = True
+            self._repeat_idle_command_time = time.time() + 10
             return self._send_to_leds([0x20])
     
     def _clear_strip(self, show=True):
@@ -198,6 +210,7 @@ class LedStripManager():
         return self._send_to_leds(packet)
 
     def _send_to_leds(self, packet):
+        """Send bytes to the leds"""
         try:
             log.debug(f"Sending to leds: {packet}")
             # If no bytes are sent, connection is broken, return false

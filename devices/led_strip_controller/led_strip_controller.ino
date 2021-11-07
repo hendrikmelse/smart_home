@@ -2,7 +2,7 @@
 #include <Adafruit_NeoPixel.h>
 
 // Doing this so I can .gitignore wifi_info.h
-// wifi_info.h #defines WIFI_SSID and WIFI_PASSWORD
+// wifi_info.h defines constant macros WIFI_SSID and WIFI_PASSWORD
 #include "wifi_info.h"
 
 #include "Bouncer.h"
@@ -34,10 +34,12 @@
  * 0x20 - revert to idle animation
  * 0x80 - set the brghtness
  *        1 data byte: brightness
+ * 0xFF - ping
+ *        device responds with 0xFF
  */
 
-#define LED_PIN 5
-#define STRIP_PIN 4
+#define LED_PIN 5     // D1
+#define STRIP_PIN 4   // D2
 
 #define LED_COUNT 60
 
@@ -100,7 +102,11 @@ void loop() {
         byte command = client.read();
         Serial.printf("Got command: %d\n", command);
         
-        if (command == 0x80) {
+        if (command == 0xFF) {
+          client.write(0xFF);
+          continue
+        }
+        else if (command == 0x80) {
           strip.setBrightness(client.read());
           strip.show();
           continue;

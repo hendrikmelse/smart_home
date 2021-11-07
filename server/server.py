@@ -11,8 +11,6 @@ from packet_validator import is_valid_packet
 HOST = "192.168.1.33"
 PORT = 42069
 
-max_sock_bind_attempts = 10
-
 reserved_device_names = [
     "server",
     "gerald"
@@ -39,7 +37,7 @@ class Server():
         self.devices = {}
 
     def run(self):
-        """ Run the server. """
+        """Run the server."""
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.sock:
             self._bind_sock()
@@ -58,22 +56,26 @@ class Server():
 
     @tenacity.retry(
         reraise=True,
-        stop=tenacity.stop_after_attempt(max_sock_bind_attempts),
+        stop=tenacity.stop_after_attempt(10),
         wait=tenacity.wait_fixed(10),
     )
     def _bind_sock(self):
         """
-        Attempt to bind the socket. 
+        Attempt to bind the socket. Retry 10 times at 10 second intervals.
         
         Preconditions:
             Socket must be initialized
         """
-        log.info(f"Binding socket to {HOST}:{PORT}...")
-        self.sock.bind((HOST, PORT))
-        log.info(f"Socket bound to {HOST}:{PORT}")
+        try:
+            log.info(f"Binding socket to {HOST}:{PORT}...")
+            self.sock.bind((HOST, PORT))
+            log.info(f"Socket bound to {HOST}:{PORT}")
+        except Exception as e:
+            log.warning(e)
+            raise
 
     def _client_handler(self, conn, addr):
-        """Listen for incoming packets and execute them."""
+        """Listen for incoming packets and process them."""
         while True:
             # Get data
             try:
@@ -97,7 +99,9 @@ class Server():
                 packet = json.loads(data)
             except Exception as ex:
                 log.info(f"{addr}: Failed to parse packet: {ex}")
-                self._send_response(conn, addr,
+                self._send_response(
+                    conn,
+                    addr,
                     success=False, 
                     error_message="Packet must be a valid json literal no longer than 1024 characters",
                 )
@@ -124,12 +128,23 @@ class Server():
                 # Packet is intended for the server
                 success, kwargs = self._server_process_packet(conn, addr, packet["payload"])
             else:
-                success, kwargs = self._process_packet(addr, packet["target"], packet["payload"])
+                success, kwargs = self._process_packet(addr, packet["target"].lower(), packet["payload"])
             
             self._send_response(conn, addr, success, **kwargs)
 
     def _send_response(self, conn, addr, success, **kwargs):
-        """Send a response back to the client"""
+        """
+        Send a response back to the client
+        
+        Parameters:
+            conn (socket): The socket object to send the response to
+            addr ((str, int)): The IP address and port number of the connections address
+            success (bool): Whether to send a success response or a fail response
+            **kwargs (any): Any additional items to be included in the response packet
+        
+        Returns:
+            None
+        """
         
         r = {
             "success": success,
@@ -141,12 +156,17 @@ class Server():
         log.debug(f"{addr}: Sending response: {r}")
         conn.sendall(r.encode())
 
-    def _process_packet(self, source_addr: (str, int), target_name: str, payload):
+    def _process_packet(self, source_addr, target_name, payload):
         """
         Execute a command from a device
+
+        Parameters:
+            source_addr ((str, int)): The source IP address and port number
+            target_name (str): The name of the device being targeted
+            payload (any): The payload to be passed to the target device
         
-        returns:
-            A tuple containing the response data
+        Returns:
+            (bool, dict): Whether the command was processed successfully, and the dict to be included in the response
         """
         
         if target_name not in self.devices:
@@ -169,7 +189,17 @@ class Server():
         
 
     def _server_process_packet(self, conn, addr, payload):
-        """Execute a command directed at the server"""
+        """
+        Execute a command directed at the server
+        
+        Parameters:
+            conn (socket): The socket object to send the response to
+            addr ((str, int)): The IP address and port number of the connections address
+            payload (dict): The command payload for the server to parse
+        
+        Returns:
+            (bool, dict): Whether the command was processed successfully, and the dict to be included in the response
+        """
 
         command = payload["command"]
 
@@ -197,7 +227,7 @@ class Server():
             return True, {"response": response}
 
         elif command == "register":
-            device_name = payload["device_name"]
+            device_name = payload["device_name"].lower()
             force_register = payload.get("force", False)
 
             if device_name in reserved_device_names:

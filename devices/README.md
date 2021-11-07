@@ -1,5 +1,5 @@
 # Devices
-Devices are the physical hardware that's controlled in the system.
+Devices are the physical hardware controlled in the system. The device layer does not interface with the smart home system, instead it provides an abstraction of the physical hardware to the client layer.
 
 ## List of Devices
 

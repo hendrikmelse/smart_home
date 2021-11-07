@@ -92,15 +92,9 @@ class LedStripClient():
         }
         self._send_packet(payload)
     
-<<<<<<< HEAD
-    def _send_packet(self, payload):
-        payload["priority"] = self.priority
-        payload["timeout"] = self.command_timeout
-=======
     def _send_packet(self, payload, send_raw=False):
         if not send_raw:
             payload["priority"] = self.priority
             payload["timeout"] = self.command_timeout
->>>>>>> fcdeca9... Added some stuff to strip client
         self._client.send_payload("led_strip_manager", payload)
 
