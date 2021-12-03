@@ -1,0 +1,8 @@
+[Unit]
+Description=A manager for the led grid
+
+[Service]
+ExecStart=/home/pi/.venvs/sh/bin/python -m led_grid_manager
+
+[Install]
+WantedBy=multi-user.target

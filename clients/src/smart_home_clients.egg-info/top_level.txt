@@ -1,3 +1,5 @@
 air_quality_reporter
 generic_clients
+led_grid_chess_player
+led_grid_manager
 led_strip_manager

@@ -1,9 +1,9 @@
 from generic_clients.base_client import Client
 
-class LedStripClient():
+class LedStripClient:
     def __init__(
         self,
-        name,
+        name="led_strip_client",
         description=None,
         version=None,
         interface=None,

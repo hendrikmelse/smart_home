@@ -47,4 +47,4 @@ The priority tells the controller whether to listed to the command or not. A hig
 ### Control Commands
 Control commands are executed immediately, and do not have a priority or timeout associated. Control commands are:
 - `brightness`: Set the overall brightness of the whole strip. Must define `brightness` as an integer between 0 and 255.
-- `reset`: Reset the stored queue or pending commands. Useful for if the strip gets locked up with a long-timeout high-priority command.
+- `reset`: Reset the stored queue or pending commands. Useful for if the strip gets locked up with a long-timeout high-priority command for some reason.

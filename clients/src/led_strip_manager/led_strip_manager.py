@@ -34,7 +34,7 @@ class LedStripManager():
         log.basicConfig(
             filename="/var/log/smart_home/led_strip_manager.log",
             format="%(asctime)s %(levelname)s: %(message)s",
-            level=log.DEBUG,
+            level=log.INFO,
         )
 
         self._device_ip = device_ip
@@ -51,7 +51,7 @@ class LedStripManager():
         self._repeat_idle_command_time = 0
         self._next_ping_time = 0
 
-        log.info("Starting manager...")
+        log.info("Starting strip manager...")
     
     def run(self):
         """Run the manager"""
@@ -64,7 +64,7 @@ class LedStripManager():
                     except OSError as ex:
                         log.warn(f"Error connecting to device: {ex}")
                         log.warn("Waiting for reset command...")
-                        while self._client.get_incoming_payload()["payload"]["command"] != "reset": ...
+                        while self._client.get_incoming_packet()["payload"]["command"] != "reset": ...
                         continue
 
                     log.info("Connected")
@@ -75,10 +75,8 @@ class LedStripManager():
 
     def _run_processing_loop(self):
         while True:
-
-            
             # Check for incoming packet
-            packet = self._client.get_incoming_payload(blocking=False)
+            packet = self._client.get_incoming_packet(blocking=False)
             if packet is not None:
                 log.debug(f"Got packet: {packet}")
 

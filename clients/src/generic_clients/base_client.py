@@ -109,7 +109,7 @@ class Client():
         self._send_packet(packet)
         return self._get_server_response().get('success')
     
-    def get_incoming_payload(self, blocking: bool = True) -> dict:
+    def get_incoming_packet(self, blocking: bool = True) -> dict:
         """Get an available payload"""
         if self._incoming_payloads:
             return self._incoming_payloads.pop(0)

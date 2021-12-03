@@ -7,4 +7,5 @@ with LedStripClient("leds") as leds:
         leds.reset()
         time.sleep(1)
         leds.reset()
-        time.sleep(30 * 60)
+        time.sleep(1200)
+
