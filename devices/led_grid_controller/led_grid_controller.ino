@@ -35,19 +35,14 @@
 
 #define GRID_PIN 4      // D2
 
-#define GRID_SIZE 16
-
 const int port = 12321;
 WiFiServer server(port);
 
-Adafruit_NeoPixel strip(256, GRID_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel leds(256, GRID_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(GRID_PIN, OUTPUT);
-
-  Serial.printf("\n");
-
+  Serial.begin(74880);
+  Serial.println("Start");
   // Connect to WiFi network
   Serial.printf("Connecting to %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -55,26 +50,24 @@ void setup() {
     delay(500);
     Serial.printf(".");
   }
-  Serial.printf("Connected\n");
-  Serial.printf("IP Address: %s\n", WiFi.localIP());
+  Serial.println("Connected");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 
   // Start listening for incoming connections
   server.begin();
   Serial.printf("Listening for connections on port %d\n", port);
 
   // Initialize the LEDs
-  strip.begin();
-  strip.setBrightness(20);
-  strip.clear();
-  strip.show();
+  leds.begin();
+  leds.clear();
+  leds.show();
+  leds.setBrightness(20);
 }
 
 void loop() {
-  Serial.printf("looping...\n");
-  delay(200);
-
-  WifiClient client = server.available();
-
+  WiFiClient client = server.available();
+  
   if (client) {
     Serial.printf("Client connected\n");
     
@@ -89,15 +82,15 @@ void loop() {
           continue;
         }
         else if (command == 0x80) {
-          strip.setBrightness(client.read());
-          strip.show();
+          leds.setBrightness(client.read());
+          leds.show();
           continue;
         }
 
         // Process LED commands
         switch (command & 0xF) {
           case 0x00:
-            strip.clear();
+            leds.clear();
             break;
           case 0x01:
             Fill(client);
@@ -111,11 +104,53 @@ void loop() {
         }
 
         if ((command & 0x10) == 0) {
-          strip.show();
+          leds.show();
         }
       }
     }
 
     Serial.printf("Client disconnected\n");
   }
+}
+
+void Fill(WiFiClient& client) {
+  uint8_t r = client.read();
+  uint8_t g = client.read();
+  uint8_t b = client.read();
+  leds.fill(leds.Color(r, g, b));
+}
+
+void FillRectangle(WiFiClient& client) {
+  uint8_t x1 = client.read();
+  uint8_t y1 = client.read();
+  uint8_t x2 = client.read();
+  uint8_t y2 = client.read();
+  uint8_t r = client.read();
+  uint8_t g = client.read();
+  uint8_t b = client.read();
+  for (uint8_t x = x1; x <= x2; ++x) {
+    for (uint8_t y = y1; y <= y2; ++y) {
+      leds.setPixelColor(Pixel(x, y), r, g, b);
+    }
+  }
+}
+
+void SetCustom(WiFiClient& client) {
+  uint8_t n = client.read();
+  for (uint8_t i = 0; i < n; ++i) {
+    uint8_t x = client.read();
+    uint8_t y = client.read();
+    uint8_t r = client.read();
+    uint8_t g = client.read();
+    uint8_t b = client.read();
+    leds.setPixelColor(Pixel(x, y), r, g, b);
+  }
+}
+
+int Pixel(int x, int y) {
+  int p = 16 * x;
+  if (x % 2 == 0)
+    return p + y;
+  else
+    return p + 15 - y;
 }
