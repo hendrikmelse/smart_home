@@ -1,8 +1,0 @@
-[Unit]
-Description=Run a server through which various IOT devices can talk to each other
-
-[Service]
-ExecStart=/home/pi/.venvs/sh/bin/python /home/pi/smart_home/server/server.py
-
-[Install]
-WantedBy=multi-user.target

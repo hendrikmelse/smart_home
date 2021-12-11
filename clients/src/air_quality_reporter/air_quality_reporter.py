@@ -14,7 +14,7 @@ def main():
         with LedStripClient("air_quality_reporter") as leds:
 
             category_colors = [
-                (0, 0, 0), # Category 0 isn't a thing
+                (0, 0, 0), # Category 0 isn't a thing, here to make this 1-indexed
                 (40, 160, 0),
                 (255, 120, 0),
                 (255, 60, 0),
@@ -26,12 +26,16 @@ def main():
             leds.priority = 1
             leds.command_timeout = 360
 
-            data = json.loads(requests.get(url="https://www.airnowapi.org/aq/observation/zipCode/current/", params= {
-                "format": "application/json",
-                "zipCode": "90250",
-                "distance": "25",
-                "API_KEY": api_key,
-            }).text)[0]
+            data = json.loads(
+                requests.get(
+                    url="https://www.airnowapi.org/aq/observation/zipCode/current/", params= {
+                        "format": "application/json",
+                        "zipCode": "90250",
+                        "distance": "25",
+                        "API_KEY": api_key,
+                    }
+                ).text
+            )[0]
 
             AQI = data["AQI"]
             color = category_colors[data["Category"]["Number"]]
