@@ -7,23 +7,24 @@ import logging as log
 
 
 MAX_MSG_SIZE = 1023
-DEVICE_IP = "192.168.1.42"
+DEVICE_IP = "UPDATE ME"
 DEVICE_PORT = 12321
-MANAGER_PORT = 13579
+MANAGER_PORT = 55501
 
 DEFAULT_LOCK_TIMEOUT = 60
 
 AVAILABLE_LED_COMMANDS = (
     "clear",
     "fill",
-    "fill_rectangle",
+    "fill_section",
     "set_custom",
     "show",
     "brightness",
+    "idle",
 )
 
 
-class GridManager:
+class StripManager:
 
     def __init__(self):
         self.locking_client = None
@@ -60,25 +61,9 @@ class GridManager:
             if command == None:
                 break
             
-            # Check if a lock has expired
-            if self.locking_client is not None and time.time() > self.lock_timeout:
-                self.locking_client = None
-
-            # If another client is locking the grid, ignore the command
-            if self.locking_client not in (None, client):
-                if command.get("command") == "lock":
-                    client.sendall(json.dumps({"result": False}).encode())
-                continue
-            
-            # If the command is an LED command, add it to the queue
+            # If the command is a valid LED command, add it to the queue
             if command.get("command") in AVAILABLE_LED_COMMANDS:
                 self.packet_queue.put(self.convert_to_bytes(command))
-            
-            # If the command is a lock request, set the lock (already checked for existing locks earlier)
-            elif command.get("command") == "lock":
-                self.locking_client = client
-                self.lock_timeout = time.time() + command.get("timeout", DEFAULT_LOCK_TIMEOUT)
-                client.sendall(json.dumps({"result": True}).encode())
 
         
         log.info(f"Connection closed to: {client.getpeername()}")
@@ -103,7 +88,7 @@ class GridManager:
 
     @staticmethod
     def convert_to_bytes(cmd: dict) -> bytearray:
-        """Convert a command into a byte string that the device will understand"""
+        """Convert a command into a bytearray that the device will understand"""
 
         command = cmd.get("command", None)
         show = cmd.get("show", True)
@@ -161,18 +146,18 @@ class GridManager:
                         last_ping = int(time.time())
                         
                     await asyncio.sleep(0)  # Surrender control to any waiting client connections
-            log.info("Disconnected from device")
+            log.info("Connection to device broken")
 
 
 def main():
 
     log.basicConfig(
-        filename="/var/log/smart_home/led_grid_manager.log",
+        filename="/var/log/smart_home/led_strip_manager.log",
         format="%(asctime)s %(levelname)s: %(message)s",
         level=log.INFO,
     )
 
-    manager = GridManager()
+    manager = StripManager()
     manager.run()
 
 

@@ -6,8 +6,7 @@ import os
 import random
 import colorsys
 from requests.exceptions import ChunkedEncodingError
-from smart_home_clients.led_grid_client import LedGridClient
-
+from led_grid.led_grid_client import LedGridClient
 
 class ChessLeds:
     def __init__(self):
@@ -22,14 +21,14 @@ class ChessLeds:
                 with LedGridClient() as self.grid:
                     self.grid.set_brightness(5)
 
-                    log.info("Getting client...")
+                    log.debug("Getting client...")
                     client = berserk.Client(berserk.TokenSession(self.token))
-                    log.info("Done!")
+                    log.debug("Done!")
 
                     while True:
-                        log.info("Getting game stream...")
+                        log.debug("Getting game stream...")
                         tv_stream = client.board.stream_tv_game()
-                        log.info("Done!")
+                        log.debug("Done!")
 
                         try:
                             for state in tv_stream:
@@ -54,15 +53,15 @@ class ChessLeds:
                             # When game stream breaks, just get a new one
                             pass
             except ResponseError:
-                log.info("Bad gateway... resetting connection to lichess server")
-                sleep(10)
+                log.info("Bad gateway... resetting connection to lichess server in 30 seconds")
+                sleep(30)
 
 
     @staticmethod
     def select_colors():
         """
         Select two random colors on the color wheel, both fully saturated,
-        50% luminousity, and at least min_sep apart in hue
+        50% luminousity, and at least min_sep apart in hue`
         """
         min_sep = 0.25
 
@@ -99,6 +98,7 @@ class ChessLeds:
 def main():
     try:
         log.basicConfig(
+            filename="/var/log/smart_home/led_chess_player.log",
             format="%(asctime)s %(levelname)s: %(message)s",
             level=log.INFO,
         )
@@ -111,6 +111,8 @@ def main():
                 sleep(10)  # Probably grid manager went down, give it a few seconds and try again
     except KeyboardInterrupt:
         log.info("Exiting due to keyboard interrupt")
+    except:
+        log.exception()
 
 if __name__ == "__main__":
     main()

@@ -3,7 +3,7 @@ import json
 import requests
 import os
 
-from generic_clients.led_strip_client import LedStripClient
+from led_strip.led_strip_client import LedStripClient
 
 def main():
     # *.api-key is .gitignored
@@ -11,7 +11,7 @@ def main():
         api_key = f.read()
     
     while True:
-        with LedStripClient("air_quality_reporter") as leds:
+        with LedStripClient() as leds:
 
             category_colors = [
                 (0, 0, 0), # Category 0 isn't a thing, here to make this 1-indexed
@@ -41,7 +41,7 @@ def main():
             color = category_colors[data["Category"]["Number"]]
             
             print(f"AQI: {AQI}, setting color to {color}")
-            leds.fill(color)
+            leds.fill(*color)
 
             time.sleep(300)
 

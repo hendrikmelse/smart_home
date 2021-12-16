@@ -1,5 +1,0 @@
-air_quality_reporter
-led_grid_chess_player
-led_grid_manager
-led_strip_manager
-smart_home_clients

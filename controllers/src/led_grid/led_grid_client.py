@@ -2,7 +2,7 @@ import json
 import socket
 
 CONTROLLER_IP = "192.168.1.33"
-CONTROLLER_PORT = 13579
+CONTROLLER_PORT = 55500
 
 class LedGridClient:
     def __init__(self):
@@ -14,7 +14,6 @@ class LedGridClient:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.sock.close()
-        return
     
     def show(self):
         self._send({
@@ -53,6 +52,7 @@ class LedGridClient:
         self._send({
             "command": "set_custom",
             "data": data,
+            "show": show,
         })
     
     def _send(self, packet):
