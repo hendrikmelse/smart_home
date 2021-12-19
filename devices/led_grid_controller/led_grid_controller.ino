@@ -128,6 +128,7 @@ void FillRectangle(WiFiClient& client) {
   uint8_t r = client.read();
   uint8_t g = client.read();
   uint8_t b = client.read();
+  Serial.printf("filling rectangle: %d %d %d %d with color %d %d %d\n", x1, y1, x2, y2, r, g, b);
   for (uint8_t x = x1; x <= x2; ++x) {
     for (uint8_t y = y1; y <= y2; ++y) {
       leds.setPixelColor(Pixel(x, y), r, g, b);
