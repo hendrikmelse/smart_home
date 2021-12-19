@@ -5,11 +5,6 @@ wifi_info.h
 
 *.log
 __pycache__/
-
-bin/
-obj/
-*.suo
-*.user
-.vs/
+build/
 
 *.egg_info/
