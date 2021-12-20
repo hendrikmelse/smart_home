@@ -6,13 +6,20 @@ CONTROLLER_PORT = 55500
 
 class LedGridClient:
     def __init__(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
     def __enter__(self):
-        self.sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
+        self.begin()
         return self
+    
+    def begin(self):
+        # Optionally use open/close instead of the context manager syntax
+        self._sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
+    
+    def close(self):
         self.sock.close()
     
     def show(self):
@@ -21,9 +28,10 @@ class LedGridClient:
         })
     
     def set_brightness(self, brightness):
+        brightness = max(0, min(100, brightness))
         self._send({
             "command": "brightness",
-            "brightness": brightness,
+            "brightness": int(brightness * 255 // 100),
         })
     
     def clear(self, show=True):
@@ -47,6 +55,9 @@ class LedGridClient:
             "show": show,
         })
     
+    def set_led(self, x, y, r, g, b, show=True):
+        self.set_custom([[x, y, r, g, b]], show)
+    
     def set_custom(self, data, show=True):
         # Data expected format is [[x1, y1, r, g, b], [x2, y2, r, g, b], ...]
         self._send({
@@ -55,5 +66,12 @@ class LedGridClient:
             "show": show,
         })
     
+    def lock(self, timeout=None):
+        # Lock the grid and prevent other clients from commanding
+        self._send({
+            "command": "lock",
+            "timeout": timeout
+        })
+
     def _send(self, packet):
-        self.sock.sendall(f"{json.dumps(packet)}\n".encode())
+        self._sock.sendall(f"{json.dumps(packet)}\n".encode())

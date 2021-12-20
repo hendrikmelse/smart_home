@@ -4,6 +4,7 @@ import queue
 import json
 import time
 import logging as log
+import subprocess
 
 
 MAX_MSG_SIZE = 1023
@@ -39,8 +40,17 @@ class GridManager:
     async def run_server(self):
         """Listen for connecting clients and spawn a coroutine for each one"""
 
+        log.info("Starting server...")
+
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(('', MANAGER_PORT))
+        try:
+            server.bind(('', MANAGER_PORT))
+        except OSError:
+            log.info("Port already in use, trying again in 120 seconds")
+            time.sleep(120)
+            server.bind(('', MANAGER_PORT))
+        log.info(f"Listening at port {MANAGER_PORT} on all available interfaces")
+        log.info(f"Local IP address is {subprocess.run(['hostname', '-I'], capture_output=True).stdout.decode().strip()}")
         server.listen(8)
         server.setblocking(False)
 
@@ -48,7 +58,7 @@ class GridManager:
 
         while True:
             client, _ = await loop.sock_accept(server)
-            log.info(f"Connected by: {client.getpeername()}")
+            log.info(f"Connected by {client.getpeername()}")
             loop.create_task(self.handle_client(client))
 
 
@@ -59,28 +69,28 @@ class GridManager:
             log.debug(f"Got command: {command}")
             if command == None:
                 break
-            
+
             # Check if a lock has expired
             if self.locking_client is not None and time.time() > self.lock_timeout:
+                log.info(f"Lock from {self.locking_client.getpeername()} has been released")
                 self.locking_client = None
 
-            # If another client is locking the grid, ignore the command
+            # If another client currently holds the lock, drop the current packet
             if self.locking_client not in (None, client):
-                if command.get("command") == "lock":
-                    client.sendall(json.dumps({"result": False}).encode())
                 continue
-            
+
             # If the command is an LED command, add it to the queue
             if command.get("command") in AVAILABLE_LED_COMMANDS:
                 self.packet_queue.put(self.convert_to_bytes(command))
-            
+
             # If the command is a lock request, set the lock (already checked for existing locks earlier)
             elif command.get("command") == "lock":
                 self.locking_client = client
-                self.lock_timeout = time.time() + command.get("timeout", DEFAULT_LOCK_TIMEOUT)
-                client.sendall(json.dumps({"result": True}).encode())
+                timeout = command.get("timeout") or DEFAULT_LOCK_TIMEOUT
+                log.info(f"Control has been locked by {client.getpeername()} ")
+                self.lock_timeout = time.time() + timeout
 
-        
+
         log.info(f"Connection closed to: {client.getpeername()}")
         client.close()
 
@@ -136,7 +146,7 @@ class GridManager:
 
 
     async def manage_device(self):
-        """Manage the connection to the device itself"""
+        """Manage the connection to the device itself and send it commands from the packet queue"""
 
         last_ping = time.time()
 

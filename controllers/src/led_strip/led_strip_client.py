@@ -4,7 +4,7 @@ import socket
 CONTROLLER_IP = "192.168.1.33"
 CONTROLLER_PORT = 55501
 
-class LedGridClient:
+class LedStripClient:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         

@@ -112,7 +112,7 @@ def main():
     except KeyboardInterrupt:
         log.info("Exiting due to keyboard interrupt")
     except:
-        log.exception()
+        log.exception("Encountered exception")
 
 if __name__ == "__main__":
     main()
