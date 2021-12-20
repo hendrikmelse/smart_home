@@ -4,10 +4,11 @@ import queue
 import json
 import time
 import logging as log
+import subprocess
 
 
 MAX_MSG_SIZE = 1023
-DEVICE_IP = "UPDATE ME"
+DEVICE_IP = "192.168.1.2"
 DEVICE_PORT = 12321
 MANAGER_PORT = 55501
 
@@ -41,7 +42,14 @@ class StripManager:
         """Listen for connecting clients and spawn a coroutine for each one"""
 
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(('', MANAGER_PORT))
+        try:
+            server.bind(('', MANAGER_PORT))
+        except OSError:
+            log.info("Port already in use, trying again in 120 seconds")
+            await asyncio.sleep(120)
+            server.bind(('', MANAGER_PORT))
+        log.info(f"Listening at port {MANAGER_PORT} on all available interfaces")
+        log.info(f"Local IP address is {subprocess.run(['hostname', '-I'], capture_output=True).stdout.decode().strip()}")
         server.listen(8)
         server.setblocking(False)
 
@@ -110,7 +118,9 @@ class StripManager:
             for point in data:
                 packet.extend(point)
         if command == "show":
-            packet = [0x0f]
+            packet = [0x0F]
+        if command == "idle":
+            packet = [0x20]
         if command == "brightness":
             brightness = cmd.get("brightness", 255)
             packet = [0x80, brightness]
@@ -154,7 +164,7 @@ def main():
     log.basicConfig(
         filename="/var/log/smart_home/led_strip_manager.log",
         format="%(asctime)s %(levelname)s: %(message)s",
-        level=log.INFO,
+        level=log.DEBUG,
     )
 
     manager = StripManager()

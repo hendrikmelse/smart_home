@@ -47,7 +47,7 @@ class GridManager:
             server.bind(('', MANAGER_PORT))
         except OSError:
             log.info("Port already in use, trying again in 120 seconds")
-            time.sleep(120)
+            await asyncio.sleep(120)
             server.bind(('', MANAGER_PORT))
         log.info(f"Listening at port {MANAGER_PORT} on all available interfaces")
         log.info(f"Local IP address is {subprocess.run(['hostname', '-I'], capture_output=True).stdout.decode().strip()}")
@@ -135,7 +135,7 @@ class GridManager:
             for point in data:
                 packet.extend(point)
         if command == "show":
-            packet = [0x0f]
+            packet = [0x0F]
         if command == "brightness":
             brightness = cmd.get("brightness", 255)
             packet = [0x80, brightness]

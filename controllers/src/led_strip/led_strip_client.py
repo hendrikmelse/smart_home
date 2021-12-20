@@ -7,14 +7,20 @@ CONTROLLER_PORT = 55501
 class LedStripClient:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-    def __enter__(self):
+
+    def begin(self):
         self.sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
+
+    def __enter__(self):
+        self.begin()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def close(self):
         self.sock.close()
-    
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
+
     def show(self):
         self._send({
             "command": "show",
@@ -23,7 +29,7 @@ class LedStripClient:
     def set_brightness(self, brightness):
         self._send({
             "command": "brightness",
-            "brightness": brightness,
+            "brightness": brightness * 255 // 100,
         })
     
     def clear(self, show=True):
@@ -46,6 +52,9 @@ class LedStripClient:
             "color": [r, g, b],
             "show": show,
         })
+    
+    def set_led(self, index, r, g, b, show=True):
+        self.set_custom([[index, r, g, b]], show)
     
     def set_custom(self, data, show=True):
         # Data expected format is [[x1, r, g, b], [x2, r, g, b], ...]

@@ -8,19 +8,19 @@ class LedGridClient:
     def __init__(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
-    def __enter__(self):
-        self.begin()
-        return self
-    
     def begin(self):
         # Optionally use open/close instead of the context manager syntax
         self._sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self.close()
+    def __enter__(self):
+        self.begin()
+        return self
     
     def close(self):
         self.sock.close()
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.close()
     
     def show(self):
         self._send({
