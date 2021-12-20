@@ -30,7 +30,7 @@
  * 0x80 - Set brightness
  *        1 data byte: brightness
  * 0xFF - Ping
- *        Responds with 0xFF
+ *        Respond with 0xFF
  */
 
 #define GRID_PIN 4      // D2
@@ -42,8 +42,11 @@ Adafruit_NeoPixel leds(256, GRID_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
   Serial.begin(74880);
+  pinMode(GRID_PIN, OUTPUT);
+
   Serial.println("Start");
-  // Connect to WiFi network
+
+  // Connect to the WiFi network
   Serial.printf("Connecting to %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
@@ -60,9 +63,9 @@ void setup() {
 
   // Initialize the LEDs
   leds.begin();
+  leds.setBrightness(20);
   leds.clear();
   leds.show();
-  leds.setBrightness(20);
 }
 
 void loop() {

@@ -16,29 +16,28 @@
  * Note that messages cannot be longer than 256 bytes total
  * 
  * Command codes are
- * 0x00 - turn entire strip off
- * 0x10 - turn strip off in memory, but don't show on the leds
- * 0x01 - turn entire strip on
+ * 0x00 - Turn off entire strip
+ * 0x10 - Turn off entire strip - in memory only
+ * 0x01 - Fill strip
  *        3 data bytes: [r, g, b]
- * 0x11 - turn entire strip on, but don't show on the leds
+ * 0x11 - Fill strip - in memory only
  *        3 data bytes: [r, g, b]
- * 0x02 - fill a portion of the strip
+ * 0x02 - Fill a portion of the strip
  *        5 data bytes: [start, end, r, g, b]
- * 0x12 - fill a portion of the strip, but don't show on the leds
+ * 0x12 - Dill a portion of the strip - In memory only
  *        5 data bytes: [start, end, r, g, b]
- * 0x03 - set leds custom
+ * 0x03 - Set custom
+ *        data bytes: [num_leds, index, r, g, b, index, r, g, b...]
+ * 0x13 - Set custom - in memory only
  *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
- * 0x13 - set leds custom, but don't show on the leds
- *        data bytes: [num_indicies, index, r, g, b, index, r, g, b...]
- * 0x0F - show the leds
- * 0x20 - revert to idle animation
- * 0x80 - set the brghtness
+ * 0x0F - Show leds from memory
+ * 0x20 - Go to idle animation
+ * 0x80 - Set the brghtness
  *        1 data byte: brightness
- * 0xFF - ping
- *        device responds with 0xFF
+ * 0xFF - Ping
+ *        Respond with 0xFF
  */
 
-#define LED_PIN 5     // D1
 #define STRIP_PIN 4   // D2
 
 #define LED_COUNT 60
@@ -51,22 +50,14 @@ Adafruit_NeoPixel strip(LED_COUNT, STRIP_PIN, NEO_GRB + NEO_KHZ800);
 const unsigned long frame_time_micros = 7000;
 unsigned long last_frame_time = 0;
 
-bool idling = false;
+bool idling = true;
 Bouncer bouncer(&strip);
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(74880);
   pinMode(STRIP_PIN, OUTPUT);
 
-  // Flash the LED to indicate program start
-  for (int i = 0; i < 5; ++i) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(50);
-    digitalWrite(LED_PIN, LOW);
-    delay(50);
-  }
-  Serial.printf("\n");
+  Serial.println("Start");
 
   // Connect to the WiFi network
   Serial.printf("Connecting to %s", WIFI_SSID);
@@ -97,14 +88,16 @@ void loop() {
 
   if (client) {
     Serial.printf("Client connected\n");
+    
     while (client.connected()) {
       if (client.available() > 0) {
         byte command = client.read();
         Serial.printf("Got command: %d\n", command);
-        
+
+        // Process immediate commands
         if (command == 0xFF) {
           client.write(0xFF);
-          continue
+          continue;
         }
         else if (command == 0x80) {
           strip.setBrightness(client.read());
@@ -116,20 +109,22 @@ void loop() {
           continue;
         }
         else {
+          // Any command that isn't a ping, or a brightness
           idling = false;
         }
 
+        // Process LED commands
         switch(command & 0xF) {
-          case 0x0:
+          case 0x00:
             strip.clear();
             break;
-          case 0x1:
+          case 0x01:
             Fill(client);
             break;
-          case 0x2:
+          case 0x02:
             FillPortion(client);
             break;
-          case 0x3:
+          case 0x03:
             Custom(client);
             break;
         }
