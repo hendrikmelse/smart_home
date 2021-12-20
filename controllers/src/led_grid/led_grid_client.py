@@ -1,5 +1,7 @@
 import json
 import socket
+import requests
+import yaml
 
 CONTROLLER_IP = "192.168.1.33"
 CONTROLLER_PORT = 55500
@@ -7,10 +9,14 @@ CONTROLLER_PORT = 55500
 class LedGridClient:
     def __init__(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
+        self.manager_ip = manager_info["ip_address"]
+        self.manager_port = manager_info["port"]
         
     def begin(self):
         # Optionally use open/close instead of the context manager syntax
-        self._sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
+        self._sock.connect((self.manager_ip, self.manager_port))
 
     def __enter__(self):
         self.begin()

@@ -1,5 +1,7 @@
 import json
 import socket
+import requests
+import yaml
 
 CONTROLLER_IP = "192.168.1.33"
 CONTROLLER_PORT = 55501
@@ -7,6 +9,10 @@ CONTROLLER_PORT = 55501
 class LedStripClient:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_strip"]
+        self.manager_ip = manager_info["ip_address"]
+        self.manager_port = manager_info["port"]
 
     def begin(self):
         self.sock.connect((CONTROLLER_IP, CONTROLLER_PORT))

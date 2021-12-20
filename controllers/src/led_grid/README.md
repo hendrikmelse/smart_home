@@ -1,7 +1,7 @@
 # Using the client
 
 ## Installation
-Clone this repository, and type `pip install <smart_home_directory>/controllers`
+Clone this repository, and run `pip install <smart_home_directory>/controllers`
 Use the `-e` option for an editable installation
 
 ## Usage Example
@@ -60,7 +60,7 @@ grid.lock(timeout=None)
 ```
 
 As an alternative to using the grid with a contect manager, you use begin/close.
-This may be useful when using the interactive interpreter or a jypyter notebook.
+This is useful when using the interactive interpreter or a jypyter notebook.
 
 ```python
 from led_grid import LedGridClient
