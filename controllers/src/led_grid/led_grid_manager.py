@@ -5,12 +5,11 @@ import json
 import time
 import logging as log
 import subprocess
+import yaml
+import requests
 
 
 MAX_MSG_SIZE = 1023
-DEVICE_IP = "192.168.1.2"
-DEVICE_PORT = 12321
-MANAGER_PORT = 55500
 
 DEFAULT_LOCK_TIMEOUT = 60
 
@@ -31,6 +30,13 @@ class GridManager:
         self.lock_timeout = time.time()
         self.packet_queue = queue.SimpleQueue()
 
+        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
+        device_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/devices.yaml").text)["led_grid"]
+
+        self.manager_port = manager_info["port"]
+        self.device_ip = device_info["ip_address"]
+        self.device_port = device_info["port"]
+
     def run(self):
         loop = asyncio.get_event_loop()
         loop.create_task(self.manage_device())
@@ -44,12 +50,12 @@ class GridManager:
 
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            server.bind(('', MANAGER_PORT))
+            server.bind(('', self.manager_port))
         except OSError:
             log.info("Port already in use, trying again in 120 seconds")
             await asyncio.sleep(120)
-            server.bind(('', MANAGER_PORT))
-        log.info(f"Listening at port {MANAGER_PORT} on all available interfaces")
+            server.bind(('', self.manager_port))
+        log.info(f"Listening at port {self.manager_port} on all available interfaces")
         log.info(f"Local IP address is {subprocess.run(['hostname', '-I'], capture_output=True).stdout.decode().strip()}")
         server.listen(8)
         server.setblocking(False)
@@ -152,7 +158,7 @@ class GridManager:
 
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((DEVICE_IP, DEVICE_PORT))
+                s.connect((self.device_ip, self.device_port))
                 log.info("Connected to device")
                 s.settimeout(1)
                 while True:

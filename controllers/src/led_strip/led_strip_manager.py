@@ -41,6 +41,8 @@ class StripManager:
     async def run_server(self):
         """Listen for connecting clients and spawn a coroutine for each one"""
 
+        log.info("Starting server...")
+
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             server.bind(('', MANAGER_PORT))
@@ -164,7 +166,7 @@ def main():
     log.basicConfig(
         filename="/var/log/smart_home/led_strip_manager.log",
         format="%(asctime)s %(levelname)s: %(message)s",
-        level=log.DEBUG,
+        level=log.INFO,
     )
 
     manager = StripManager()
