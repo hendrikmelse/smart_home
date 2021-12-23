@@ -1,6 +1,6 @@
 from time import sleep
 import berserk
-from berserk.exceptions import ResponseError
+from berserk.exceptions import ResponseError, ApiError
 import logging as log
 import os
 import random
@@ -108,7 +108,11 @@ def main():
             try:
                 chess_player.run()
             except BrokenPipeError:
-                sleep(10)  # Probably grid manager went down, give it a few seconds and try again
+                log.warning("Encountered broken pipe error, restarting")
+                sleep(10)  # Probably grid manager went down, give it a few seconds before trying again
+            except ApiError:
+                log.warning("Encountered API error, restarting")
+                sleep(10)  # berserk messed up, give it a few seconds before trying again
     except KeyboardInterrupt:
         log.info("Exiting due to keyboard interrupt")
     except:

@@ -23,7 +23,7 @@ class LedGridClient:
         return self
     
     def close(self):
-        self.sock.close()
+        self._sock.close()
     
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()

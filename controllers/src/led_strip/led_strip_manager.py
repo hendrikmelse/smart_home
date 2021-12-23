@@ -1,17 +1,15 @@
 import asyncio
-import socket
-import queue
 import json
-import time
 import logging as log
-import subprocess
-import yaml
+import queue
 import requests
+import socket
+import subprocess
+import time
+import yaml
 
 
 MAX_MSG_SIZE = 1023
-
-DEFAULT_LOCK_TIMEOUT = 60
 
 AVAILABLE_LED_COMMANDS = (
     "clear",
@@ -40,11 +38,11 @@ class StripManager:
 
     def run(self):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.manage_device())
-        loop.create_task(self.run_server())
+        loop.create_task(self._manage_device())
+        loop.create_task(self._run_server())
         loop.run_forever()
 
-    async def run_server(self):
+    async def _run_server(self):
         """Listen for connecting clients and spawn a coroutine for each one"""
 
         log.info("Starting server...")
@@ -65,28 +63,28 @@ class StripManager:
 
         while True:
             client, _ = await loop.sock_accept(server)
-            log.info(f"Connected by: {client.getpeername()}")
-            loop.create_task(self.handle_client(client))
+            log.info(f"Connected by client: {client.getpeername()}")
+            loop.create_task(self._handle_client(client))
 
 
-    async def handle_client(self, client: socket.socket):
+    async def _handle_client(self, client: socket.socket):
         """Listen for, process, and queue up packets until the client disconnects"""
         while True:
-            command = await self.get_command(client)
+            command = await self._get_command(client)
             log.debug(f"Got command: {command}")
+
             if command == None:
                 break
-            
-            # If the command is a valid LED command, add it to the queue
+
             if command.get("command") in AVAILABLE_LED_COMMANDS:
-                self.packet_queue.put(self.convert_to_bytes(command))
+                self.packet_queue.put(self._convert_to_bytes(command))
 
         
-        log.info(f"Connection closed to: {client.getpeername()}")
+        log.info(f"Connection closed to client: {client.getpeername()}")
         client.close()
 
     @staticmethod
-    async def get_command(client: socket.socket) -> dict:
+    async def _get_command(client: socket.socket) -> dict:
         """Get a single object from the client (strean is ndjson)"""
         loop = asyncio.get_event_loop()
 
@@ -103,7 +101,7 @@ class StripManager:
             return json.loads(msg)
 
     @staticmethod
-    def convert_to_bytes(cmd: dict) -> bytearray:
+    def _convert_to_bytes(cmd: dict) -> bytearray:
         """Convert a command into a bytearray that the device will understand"""
 
         command = cmd.get("command", None)
@@ -138,16 +136,18 @@ class StripManager:
             return bytearray(packet)
 
 
-    async def manage_device(self):
+    async def _manage_device(self):
         """Manage the connection to the device itself"""
 
         last_ping = time.time()
 
         while True:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((self.device_ip, self.device_port))
-                log.info("Connected to device")
+                await self._connect_to_device(s, self.device_ip, self.device_port)
+
+                log.info(f"Connected to device: {s.getpeername()}")
                 s.settimeout(1)
+
                 while True:
                     while not self.packet_queue.empty():
                         packet = self.packet_queue.get()
@@ -166,6 +166,22 @@ class StripManager:
                     await asyncio.sleep(0)  # Surrender control to any waiting client connections
             log.info("Connection to device broken")
 
+    @staticmethod
+    async def _connect_to_device(sock, ip, port):
+        failed_connection_attempts = 0
+        while True:
+            try:
+                sock.connect((ip, port))
+                return
+            except OSError as e:
+                if failed_connection_attempts < 3:
+                    log.warning(f"Failed to connect to device at ({ip}, {port})")
+                    log.warning(e)
+                    log.warning("Retrying in 10 seconds")
+                    failed_connection_attempts += 1
+                    if failed_connection_attempts == 3:
+                        log.warning("Supressing future warnings like this")
+                await asyncio.sleep(10)
 
 def main():
 

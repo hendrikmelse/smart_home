@@ -8,21 +8,21 @@ CONTROLLER_PORT = 55501
 
 class LedStripClient:
     def __init__(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_strip"]
         self.manager_ip = manager_info["ip_address"]
         self.manager_port = manager_info["port"]
 
     def begin(self):
-        self.sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
+        self._sock.connect((CONTROLLER_IP, CONTROLLER_PORT))
 
     def __enter__(self):
         self.begin()
         return self
 
     def close(self):
-        self.sock.close()
+        self._sock.close()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()
@@ -76,4 +76,4 @@ class LedStripClient:
         })
     
     def _send(self, packet):
-        self.sock.sendall(f"{json.dumps(packet)}\n".encode())
+        self._sock.sendall(f"{json.dumps(packet)}\n".encode())
