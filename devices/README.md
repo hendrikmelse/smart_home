@@ -1,7 +1,2 @@
 # Devices
-Devices are the physical hardware controlled in the system. The device layer does not interface with the smart home system, instead it provides an abstraction of the physical hardware to the client layer.
-
-## List of Devices
-
-### led_strip_controller
-Ad arduino that controls an LED strip. This device does not connect to the server directly. Instead, it's controlled by the led_strip_manager with a dedicated TCP socket seperate from the main server.
+Devices are the physical hardware controlled in the system. The device layer provides a simple protocol for network control. Devices only accept a connection from a single source, and so require a manager to coordinate multiple control endpoints.

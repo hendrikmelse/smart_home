@@ -1,0 +1,10 @@
+pyproject.toml
+setup.cfg
+src/led_strip_manager/__init__.py
+src/led_strip_manager/__main__.py
+src/led_strip_manager/led_strip_manager.py
+src/led_strip_manager.egg-info/PKG-INFO
+src/led_strip_manager.egg-info/SOURCES.txt
+src/led_strip_manager.egg-info/dependency_links.txt
+src/led_strip_manager.egg-info/requires.txt
+src/led_strip_manager.egg-info/top_level.txt

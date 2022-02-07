@@ -2,7 +2,7 @@
 Description=A manager for the led grid
 
 [Service]
-ExecStart=/home/pi/venvs/sh/bin/python -m led_grid_manager
+ExecStart=/home/pi/venvs/sh/bin/python -m led_grid_chess_player
 
 [Install]
 WantedBy=multi-user.target
