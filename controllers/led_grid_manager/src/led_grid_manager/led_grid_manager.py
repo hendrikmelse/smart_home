@@ -73,7 +73,12 @@ class GridManager:
         while True:
             command = await self.get_command(client)
             log.debug(f"Got command: {command}")
+
+            # Check for disconnect
             if command == None:
+                # Deactivate the lock, if held by the disconnecting client
+                if client is self.locking_client:
+                    self.locking_client = None
                 break
 
             # Check if a lock has expired
