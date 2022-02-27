@@ -1,23 +1,19 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from led_grid_client import LedGridClient
 
+turn_off_time = datetime(2000, 1, 1, 22, 30, 0)
+off_duration = 8.5 * 60 * 60
 
-
-def is_daytime(now):
-    return now.hour >= 8 and (now.hour < 22 or (now.hour == 22 and now.minute < 30))
-
-with LedGridClient() as grid:
-    while True:
-        now = datetime.now()
-        if is_daytime(now):
-            tonight = datetime(now.year, now.month, now.day, 22, 30, 0)
-            time.sleep((tonight - now).total_seconds())
-            grid.lock(timeout=(9.5 * 60 * 60))
+def main():
+    with LedGridClient() as grid:
+        while True:
+            now = datetime.now()
+            time.sleep((turn_off_time - now).seconds)
+            grid.lock(timeout=off_duration)
             grid.clear()
-        else:
-            # not daytime, wait half a day until it is
-            time.sleep(12 * 60 * 60)
+            time.sleep(10)
 
 
-
+if __name__ == "__main__":
+    main()

@@ -2,7 +2,7 @@
 Description=A service to shut off the LED grid at night
 
 [Service]
-ExecStart=/home/pi/venvs/sh/bin/python /home/pi/smart_home/scripts/turn_off_at_night.python
+ExecStart=/home/pi/venvs/sh/bin/python /home/pi/smart_home/scripts/turn_off_at_night.py
 
 [Install]
 WantedBy=multi-user.target
