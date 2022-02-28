@@ -11,7 +11,7 @@ from led_strip_client import LedStripClient
 with LedStripClient() as strip:
     strip.clear()
     strip.set_brightness(10)  # Set the brightness to 10%
-    strip.fill(255, 0, 255, show=False)  # Fill magenta, but dont blit to the strip yet
+    strip.fill(255, 0, 255, show=False)  # Fill with magenta, but don't blit to the strip yet
     strip.fill_section(3, 10, 0, 255, 0)  # Fill leds 3-10 with green
 ```
 
@@ -58,7 +58,7 @@ strip.set_custom(data, show=True)
 strip.idle()
 ```
 
-As an alternative to using the strip with a contect manager, you use begin/close.
+As an alternative to using the strip with a contect manager, you can use begin/close.
 This is useful when using the interactive interpreter or a jypyter notebook.
 
 ```python
