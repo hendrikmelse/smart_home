@@ -62,7 +62,7 @@ As an alternative to using the strip with a contect manager, you can use begin/c
 This is useful when using the interactive interpreter or a jypyter notebook.
 
 ```python
-from led_strip import LedStripClient
+from led_strip_client import LedStripClient
 
 strip = LedstripClient()
 strip.begin()
