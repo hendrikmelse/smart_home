@@ -3,6 +3,7 @@ import json
 import logging as log
 import queue
 import requests
+from requests.exceptions import ConnectionError
 import socket
 import subprocess
 import time
@@ -29,8 +30,13 @@ class StripManager:
         self.lock_timeout = time.time()
         self.packet_queue = queue.SimpleQueue()
 
-        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_strip"]
-        device_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/devices.yaml").text)["led_strip"]
+        while True:
+            try:
+                manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_strip"]
+                device_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/devices.yaml").text)["led_strip"]
+                break
+            except ConnectionError:
+                time.sleep(5)
 
         self.manager_port = manager_info["port"]
         self.device_ip = device_info["ip_address"]
@@ -98,6 +104,7 @@ class StripManager:
         if msg == "":
             return None
         else:
+            log.debug(f"Got raw command: {msg}")
             return json.loads(msg)
 
     @staticmethod
@@ -113,7 +120,7 @@ class StripManager:
         if command == "fill":
             r, g, b = cmd.get("color", (0, 0, 0))
             packet = [0x01 if show else 0x11, r, g, b]
-        if command == "fill_rectangle":
+        if command == "fill_section":
             x1, y1, x2, y2 = cmd.get("position", (0, 0, 0, 0))
             r, g, b = cmd.get("color", (0, 0, 0))
             packet = [0x02 if show else 0x12, x1, y1, x2, y2, r, g, b]

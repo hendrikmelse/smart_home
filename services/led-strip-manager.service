@@ -1,5 +1,7 @@
 [Unit]
 Description=A manager for the led strip
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/home/pi/venvs/sh/bin/python -m led_strip_manager

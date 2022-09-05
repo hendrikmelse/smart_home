@@ -1,5 +1,7 @@
 [Unit]
 Description=A manager for the led grid
+Requires=led-grid-manager.service
+After=led-grid-manager.service
 
 [Service]
 ExecStart=/home/pi/venvs/sh/bin/python -m led_grid_chess_player

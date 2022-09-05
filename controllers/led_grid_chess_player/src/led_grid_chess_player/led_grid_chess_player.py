@@ -1,4 +1,4 @@
-from time import sleep
+import time
 import berserk
 from berserk.exceptions import ResponseError, ApiError
 import logging as log
@@ -54,7 +54,7 @@ class ChessLeds:
                             pass
             except ResponseError:
                 log.info("Bad gateway... resetting connection to lichess server in 30 seconds")
-                sleep(30)
+                time.sleep(30)
 
 
     @staticmethod
@@ -109,10 +109,10 @@ def main():
                 chess_player.run()
             except BrokenPipeError:
                 log.warning("Encountered broken pipe error, restarting")
-                sleep(10)  # Probably grid manager went down, give it a few seconds before trying again
+                time.sleep(10)  # Probably grid manager went down, give it a few seconds before trying again
             except ApiError:
                 log.warning("Encountered API error, restarting")
-                sleep(10)  # berserk messed up, give it a few seconds before trying again
+                time.sleep(10)  # berserk messed up, give it a few seconds before trying again
     except KeyboardInterrupt:
         log.info("Exiting due to keyboard interrupt")
     except:

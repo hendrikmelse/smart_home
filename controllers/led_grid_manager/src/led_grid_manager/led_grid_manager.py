@@ -7,6 +7,7 @@ import logging as log
 import subprocess
 import yaml
 import requests
+from requests.exceptions import ConnectionError
 
 
 MAX_MSG_SIZE = 1023
@@ -30,9 +31,14 @@ class GridManager:
         self.lock_timeout = time.time()
         self.packet_queue = queue.SimpleQueue()
 
-        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
-        device_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/devices.yaml").text)["led_grid"]
-
+        while True:
+            try:
+                manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
+                device_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/devices.yaml").text)["led_grid"]
+                break
+            except ConnectionError:
+                time.sleep(5)
+        
         self.manager_port = manager_info["port"]
         self.device_ip = device_info["ip_address"]
         self.device_port = device_info["port"]

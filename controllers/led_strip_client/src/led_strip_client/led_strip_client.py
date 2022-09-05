@@ -53,7 +53,7 @@ class LedStripClient:
     
     def fill_section(self, start, end, r, g, b, show=True):
         self._send({
-            "command": "fill_rectangle",
+            "command": "fill_section",
             "section": [min(start, end), max(start, end)],
             "color": [r, g, b],
             "show": show,
@@ -66,7 +66,7 @@ class LedStripClient:
         # Data expected format is [[x1, r, g, b], [x2, r, g, b], ...]
         self._send({
             "command": "set_custom",
-            "data": data,
+            "data": [x for x in data if 0 <= x[0] < 60],
             "show": show,
         })
     

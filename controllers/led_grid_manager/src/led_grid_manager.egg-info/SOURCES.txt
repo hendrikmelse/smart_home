@@ -2,7 +2,9 @@ pyproject.toml
 setup.cfg
 src/led_grid_manager/__init__.py
 src/led_grid_manager/__main__.py
+src/led_grid_manager/grid_connection.py
 src/led_grid_manager/led_grid_manager.py
+src/led_grid_manager/led_grid_manager_old.py
 src/led_grid_manager.egg-info/PKG-INFO
 src/led_grid_manager.egg-info/SOURCES.txt
 src/led_grid_manager.egg-info/dependency_links.txt

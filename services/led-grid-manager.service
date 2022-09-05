@@ -1,5 +1,7 @@
 [Unit]
 Description=A manager for the led grid
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/home/pi/venvs/sh/bin/python -m led_grid_manager

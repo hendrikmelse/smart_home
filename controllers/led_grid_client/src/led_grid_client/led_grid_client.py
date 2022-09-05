@@ -1,7 +1,9 @@
 import json
 import socket
 import requests
+from requests.exceptions import ConnectionError
 import yaml
+import time
 
 CONTROLLER_IP = "192.168.1.33"
 CONTROLLER_PORT = 55500
@@ -10,13 +12,26 @@ class LedGridClient:
     def __init__(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
+        while True:
+            try:
+                manager_info = yaml.safe_load(requests.get("https://raw.githubusercontent.com/hendrikmelse/smart_home/master/config/managers.yaml").text)["led_grid"]
+                break
+            except ConnectionError:
+                time.sleep(5)
         self.manager_ip = manager_info["ip_address"]
         self.manager_port = manager_info["port"]
         
     def begin(self):
         """Initialize the connection to the grid manager"""
-        self._sock.connect((self.manager_ip, self.manager_port))
+        attempts = 0
+        while attempts < 5:
+            try:
+                self._sock.connect((self.manager_ip, self.manager_port))
+                return
+            except ConnectionRefusedError:
+                attempts += 1
+                time.sleep(5.0)
+
 
     def __enter__(self):
         self.begin()
