@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from led_grid_client import LedGridClient
 
-turn_off_time = datetime(2000, 1, 1, 22, 0, 0)
+turn_off_time = datetime(2000, 1, 1, 21, 30, 0)
 off_duration = 8 * 60 * 60
 
 def main():
